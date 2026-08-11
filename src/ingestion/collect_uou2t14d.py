@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import datetime, timezone
 from pathlib import Path
 
 import pandas as pd
@@ -24,19 +23,19 @@ REQUIRED_COLUMNS = [
     "collectedAt",
 ]
 
+# nationalGridBmUnit is the complete unit identifier
+# in the returned UOU2T14D dataset.
 DUPLICATE_KEY = [
-    "bmUnit",
+    "nationalGridBmUnit",
     "publishTime",
     "forecastDate",
 ]
 
 
 def configure_logging() -> logging.Logger:
-    """Create console and file logging for the ingestion pipeline."""
+    """Configure console and file logging."""
 
     LOG_DIR.mkdir(parents=True, exist_ok=True)
-
-    log_file = LOG_DIR / "uou2t14d_ingestion.log"
 
     logger = logging.getLogger("uou2t14d_ingestion")
     logger.setLevel(logging.INFO)
@@ -46,7 +45,9 @@ def configure_logging() -> logging.Logger:
             "%(asctime)s | %(levelname)s | %(message)s"
         )
 
-        file_handler = logging.FileHandler(log_file)
+        file_handler = logging.FileHandler(
+            LOG_DIR / "uou2t14d_ingestion.log"
+        )
         file_handler.setFormatter(formatter)
 
         console_handler = logging.StreamHandler()
@@ -59,10 +60,12 @@ def configure_logging() -> logging.Logger:
 
 
 def validate_dataframe(df: pd.DataFrame) -> dict:
-    """Validate the basic structure and quality of an Elexon snapshot."""
+    """Validate an incoming UOU2T14D publication."""
 
     if df.empty:
-        raise ValueError("Elexon returned an empty UOU2T14D dataset.")
+        raise ValueError(
+            "Elexon returned an empty UOU2T14D dataset."
+        )
 
     missing_columns = [
         column
@@ -75,14 +78,23 @@ def validate_dataframe(df: pd.DataFrame) -> dict:
             f"Required columns missing: {missing_columns}"
         )
 
+    duplicate_count = int(
+        df.duplicated(
+            subset=DUPLICATE_KEY,
+            keep=False,
+        ).sum()
+    )
+
+    if duplicate_count > 0:
+        raise ValueError(
+            f"Detected {duplicate_count:,} rows involved "
+            f"in duplicate source keys."
+        )
+
     null_counts = {
         column: int(df[column].isna().sum())
         for column in REQUIRED_COLUMNS
     }
-
-    duplicate_count = int(
-        df.duplicated(subset=DUPLICATE_KEY).sum()
-    )
 
     negative_output_count = int(
         (
@@ -104,20 +116,59 @@ def validate_dataframe(df: pd.DataFrame) -> dict:
     }
 
 
-def timestamp_to_text(value) -> str | None:
-    """Convert a pandas timestamp/date value into JSON-safe text."""
+def get_publication_time(df: pd.DataFrame) -> pd.Timestamp:
+    """Return the unique source publication timestamp."""
 
-    if pd.isna(value):
-        return None
+    publication_times = (
+        df["publishTime"]
+        .dropna()
+        .drop_duplicates()
+        .sort_values()
+    )
 
-    return pd.Timestamp(value).isoformat()
+    if len(publication_times) != 1:
+        raise ValueError(
+            "Expected exactly one publishTime in the latest "
+            f"UOU2T14D snapshot, but found "
+            f"{len(publication_times)}."
+        )
+
+    publication_time = pd.Timestamp(
+        publication_times.iloc[0]
+    )
+
+    if publication_time.tzinfo is None:
+        publication_time = publication_time.tz_localize("UTC")
+    else:
+        publication_time = publication_time.tz_convert("UTC")
+
+    return publication_time
+
+
+def publication_file_stamp(
+    publication_time: pd.Timestamp,
+) -> str:
+    """Convert publication timestamp to a stable filename."""
+
+    return publication_time.strftime(
+        "%Y%m%dT%H%M%SZ"
+    )
 
 
 def save_snapshot(
     df: pd.DataFrame,
     validation_results: dict,
-) -> tuple[Path, Path]:
-    """Save a timestamped Parquet snapshot and metadata file."""
+) -> tuple[Path, Path, bool]:
+    """
+    Save one file per unique Elexon publication.
+
+    Returns
+    -------
+    parquet_path
+    metadata_path
+    created
+        False when the publication already exists.
+    """
 
     snapshot_directory = RAW_DATA_DIR / "uou2t14d"
     snapshot_directory.mkdir(
@@ -125,51 +176,64 @@ def save_snapshot(
         exist_ok=True,
     )
 
-    now_utc = datetime.now(timezone.utc)
-    timestamp = now_utc.strftime("%Y%m%dT%H%M%SZ")
+    publication_time = get_publication_time(df)
+    publication_stamp = publication_file_stamp(
+        publication_time
+    )
 
     parquet_path = (
         snapshot_directory
-        / f"uou2t14d_{timestamp}.parquet"
+        / f"uou2t14d_publish_{publication_stamp}.parquet"
     )
 
     metadata_path = (
         snapshot_directory
-        / f"uou2t14d_{timestamp}_metadata.json"
+        / f"uou2t14d_publish_{publication_stamp}_metadata.json"
     )
+
+    if parquet_path.exists():
+        return parquet_path, metadata_path, False
 
     df.to_parquet(
         parquet_path,
         index=False,
     )
 
+    forecast_dates = pd.to_datetime(
+        df["forecastDate"],
+        errors="coerce",
+    )
+
     metadata = {
         "dataset": DATASET_NAME,
         "source": "Elexon Insights API",
         "endpoint": "/datasets/UOU2T14D/stream",
-        "collected_at_utc": now_utc.isoformat(),
+        "publication_time_utc": publication_time.isoformat(),
+        "collected_at_utc": pd.Timestamp.now(
+            tz="UTC"
+        ).isoformat(),
         "rows": int(len(df)),
         "columns": df.columns.tolist(),
-        "distinct_bm_units": int(
-            df["bmUnit"].nunique(dropna=True)
+        "distinct_national_grid_bm_units": int(
+            df["nationalGridBmUnit"].nunique(
+                dropna=True
+            )
+        ),
+        "distinct_elexon_bm_units": int(
+            df["bmUnit"].nunique(
+                dropna=True
+            )
         ),
         "distinct_fuel_types": int(
-            df["fuelType"].nunique(dropna=True)
+            df["fuelType"].nunique(
+                dropna=True
+            )
         ),
-        "distinct_publication_times": int(
-            df["publishTime"].nunique(dropna=True)
+        "earliest_forecast_date": (
+            forecast_dates.min().isoformat()
         ),
-        "earliest_publish_time": timestamp_to_text(
-            df["publishTime"].min()
-        ),
-        "latest_publish_time": timestamp_to_text(
-            df["publishTime"].max()
-        ),
-        "earliest_forecast_date": timestamp_to_text(
-            df["forecastDate"].min()
-        ),
-        "latest_forecast_date": timestamp_to_text(
-            df["forecastDate"].max()
+        "latest_forecast_date": (
+            forecast_dates.max().isoformat()
         ),
         "validation": validation_results,
     }
@@ -177,18 +241,18 @@ def save_snapshot(
     with metadata_path.open(
         "w",
         encoding="utf-8",
-    ) as metadata_file:
+    ) as file:
         json.dump(
             metadata,
-            metadata_file,
+            file,
             indent=2,
         )
 
-    return parquet_path, metadata_path
+    return parquet_path, metadata_path, True
 
 
 def main() -> None:
-    """Run the UOU2T14D ingestion pipeline."""
+    """Run the UOU2T14D ingestion process."""
 
     logger = configure_logging()
 
@@ -201,7 +265,8 @@ def main() -> None:
         client = ElexonClient()
 
         logger.info(
-            "Requesting latest generation availability from Elexon."
+            "Requesting latest generation availability "
+            "from Elexon."
         )
 
         df = client.get_latest_generation_availability()
@@ -211,45 +276,60 @@ def main() -> None:
             f"{len(df):,}",
         )
 
-        validation_results = validate_dataframe(df)
+        validation = validate_dataframe(df)
 
-        parquet_path, metadata_path = save_snapshot(
-            df,
-            validation_results,
-        )
+        publication_time = get_publication_time(df)
 
-        logger.info(
-            "Parquet snapshot saved to %s",
-            parquet_path,
-        )
-
-        logger.info(
-            "Metadata saved to %s",
-            metadata_path,
+        parquet_path, metadata_path, created = (
+            save_snapshot(
+                df,
+                validation,
+            )
         )
 
         print()
-        print("UOU2T14D INGESTION COMPLETE")
-        print("---------------------------")
-        print(f"Rows:              {len(df):,}")
+        print("UOU2T14D INGESTION RESULT")
+        print("-------------------------")
         print(
-            f"BM Units:          "
-            f"{df['bmUnit'].nunique(dropna=True):,}"
+            "Source publication:",
+            publication_time.isoformat(),
         )
         print(
-            f"Fuel types:        "
-            f"{df['fuelType'].nunique(dropna=True):,}"
+            "Rows:",
+            f"{len(df):,}",
         )
         print(
-            f"Publication times: "
-            f"{df['publishTime'].nunique(dropna=True):,}"
+            "National Grid BM Units:",
+            f"{df['nationalGridBmUnit'].nunique():,}",
         )
         print(
-            f"Duplicate keys:    "
-            f"{validation_results['duplicate_key_rows']:,}"
+            "Fuel types:",
+            f"{df['fuelType'].nunique():,}",
         )
-        print(f"Parquet:           {parquet_path}")
-        print(f"Metadata:          {metadata_path}")
+        print(
+            "Duplicate source keys:",
+            validation["duplicate_key_rows"],
+        )
+
+        if created:
+            logger.info(
+                "New Elexon publication saved."
+            )
+
+            print("Status: NEW PUBLICATION SAVED")
+            print("Parquet:", parquet_path)
+            print("Metadata:", metadata_path)
+
+        else:
+            logger.info(
+                "Publication %s already stored. "
+                "No duplicate snapshot created.",
+                publication_time,
+            )
+
+            print("Status: PUBLICATION ALREADY STORED")
+            print("No duplicate snapshot created.")
+            print("Existing file:", parquet_path)
 
     except Exception:
         logger.exception(
