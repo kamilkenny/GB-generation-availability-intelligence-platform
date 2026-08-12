@@ -158,6 +158,7 @@ def publication_file_stamp(
 def save_snapshot(
     df: pd.DataFrame,
     validation_results: dict,
+    snapshot_directory: Path | None = None,
 ) -> tuple[Path, Path, bool]:
     """
     Save one file per unique Elexon publication.
@@ -170,7 +171,11 @@ def save_snapshot(
         False when the publication already exists.
     """
 
-    snapshot_directory = RAW_DATA_DIR / "uou2t14d"
+    if snapshot_directory is None:
+        snapshot_directory = RAW_DATA_DIR / "uou2t14d"
+
+    snapshot_directory = Path(snapshot_directory)
+
     snapshot_directory.mkdir(
         parents=True,
         exist_ok=True,
@@ -249,6 +254,41 @@ def save_snapshot(
         )
 
     return parquet_path, metadata_path, True
+
+
+def collect_latest_publication(
+    snapshot_directory: Path | None = None,
+) -> dict:
+    """Collect, validate and persist the latest Elexon publication."""
+
+    client = ElexonClient()
+
+    df = client.get_latest_generation_availability()
+
+    validation = validate_dataframe(df)
+
+    publication_time = get_publication_time(df)
+
+    parquet_path, metadata_path, created = save_snapshot(
+        df,
+        validation,
+        snapshot_directory=snapshot_directory,
+    )
+
+    return {
+        "publication_time": publication_time,
+        "rows": int(len(df)),
+        "national_grid_bm_units": int(
+            df["nationalGridBmUnit"].nunique()
+        ),
+        "fuel_types": int(
+            df["fuelType"].nunique()
+        ),
+        "validation": validation,
+        "parquet_path": parquet_path,
+        "metadata_path": metadata_path,
+        "created": created,
+    }
 
 
 def main() -> None:

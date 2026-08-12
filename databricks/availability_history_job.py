@@ -19,6 +19,9 @@ if str(PROJECT_ROOT) not in sys.path:
     )
 
 
+from src.ingestion.collect_uou2t14d import (
+    collect_latest_publication,
+)
 from src.pipeline.spark_availability_pipeline import (
     run_databricks_pipeline,
 )
@@ -131,6 +134,32 @@ def execute_job(
     )
 
 
+def execute_live_job(
+    spark: SparkSession,
+    raw_directory: str,
+    catalog: str,
+    schema: str,
+) -> dict:
+    """Collect the latest publication then refresh analytics."""
+
+    raw_path = Path(raw_directory)
+
+    ingestion = collect_latest_publication(
+        snapshot_directory=raw_path,
+    )
+
+    result = execute_job(
+        spark,
+        raw_directory=raw_directory,
+        catalog=catalog,
+        schema=schema,
+    )
+
+    result["ingestion"] = ingestion
+
+    return result
+
+
 def main() -> None:
     """Run the Databricks availability job."""
 
@@ -146,13 +175,35 @@ def main() -> None:
         )
 
     try:
-        result = execute_job(
+        result = execute_live_job(
             spark,
             raw_directory=(
                 args.raw_directory
             ),
             catalog=args.catalog,
             schema=args.schema,
+        )
+
+        ingestion = result["ingestion"]
+
+        print()
+        print("LIVE ELEXON INGESTION")
+        print("---------------------")
+        print(
+            "Publication:",
+            ingestion["publication_time"],
+        )
+        print(
+            "Rows received:",
+            ingestion["rows"],
+        )
+        print(
+            "Status:",
+            (
+                "NEW PUBLICATION SAVED"
+                if ingestion["created"]
+                else "PUBLICATION ALREADY STORED"
+            ),
         )
 
         print()

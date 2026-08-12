@@ -205,3 +205,73 @@ def test_get_spark_session_reuses_active_session(
     assert configuration[
         "spark.sql.session.timeZone"
     ] == "UTC"
+
+
+def test_execute_live_job_collects_then_runs_pipeline(
+    monkeypatch,
+):
+    captured = {}
+
+    ingestion_result = {
+        "publication_time": "2026-08-12T22:00:00Z",
+        "rows": 100,
+        "created": True,
+    }
+
+    analytics_result = {
+        "quality": {"rows": 500},
+        "row_counts": {},
+        "table_names": {},
+    }
+
+    def fake_collect_latest_publication(
+        snapshot_directory,
+    ):
+        captured["snapshot_directory"] = (
+            snapshot_directory
+        )
+        return ingestion_result
+
+    def fake_execute_job(
+        spark,
+        raw_directory,
+        catalog,
+        schema,
+    ):
+        captured["spark"] = spark
+        captured["raw_directory"] = raw_directory
+        captured["catalog"] = catalog
+        captured["schema"] = schema
+        return analytics_result
+
+    monkeypatch.setattr(
+        JOB,
+        "collect_latest_publication",
+        fake_collect_latest_publication,
+    )
+
+    monkeypatch.setattr(
+        JOB,
+        "execute_job",
+        fake_execute_job,
+    )
+
+    fake_spark = object()
+
+    result = JOB.execute_live_job(
+        fake_spark,
+        raw_directory="/Volumes/workspace/gb_generation/raw_uou2t14d",
+        catalog="workspace",
+        schema="gb_generation",
+    )
+
+    assert captured["snapshot_directory"] == Path(
+        "/Volumes/workspace/gb_generation/raw_uou2t14d"
+    )
+
+    assert captured["spark"] is fake_spark
+    assert captured["catalog"] == "workspace"
+    assert captured["schema"] == "gb_generation"
+
+    assert result["ingestion"] == ingestion_result
+    assert result["quality"]["rows"] == 500

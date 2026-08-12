@@ -5,6 +5,7 @@ from src.ingestion.collect_uou2t14d import (
     DUPLICATE_KEY,
     REQUIRED_COLUMNS,
     get_publication_time,
+    save_snapshot,
     validate_dataframe,
 )
 
@@ -191,3 +192,35 @@ def test_duplicate_key_definition_uses_national_grid_unit():
     assert "nationalGridBmUnit" in DUPLICATE_KEY
     assert "publishTime" in DUPLICATE_KEY
     assert "forecastDate" in DUPLICATE_KEY
+
+
+def test_snapshot_can_use_custom_directory(tmp_path):
+    df = pd.DataFrame(
+        [
+            make_row(
+                nationalGridBmUnit="UNIT-CUSTOM",
+            ),
+        ]
+    )
+
+    validation = validate_dataframe(df)
+
+    parquet_path, metadata_path, created = save_snapshot(
+        df,
+        validation,
+        snapshot_directory=tmp_path,
+    )
+
+    assert created is True
+    assert parquet_path.parent == tmp_path
+    assert metadata_path.parent == tmp_path
+    assert parquet_path.exists()
+    assert metadata_path.exists()
+
+    _, _, created_again = save_snapshot(
+        df,
+        validation,
+        snapshot_directory=tmp_path,
+    )
+
+    assert created_again is False
