@@ -17,9 +17,23 @@ RAW_DATA_DIR = BASE_DIR / "data" / "raw"
 PROCESSED_DATA_DIR = BASE_DIR / "data" / "processed"
 LOG_DIR = BASE_DIR / "logs"
 
-RAW_DATA_DIR.mkdir(parents=True, exist_ok=True)
-PROCESSED_DATA_DIR.mkdir(parents=True, exist_ok=True)
-LOG_DIR.mkdir(parents=True, exist_ok=True)
+# Remote Git job source is read-only in Databricks.
+# Local development still creates the project directories.
+IS_DATABRICKS_WORKSPACE = str(BASE_DIR).startswith("/Workspace/")
+
+if not IS_DATABRICKS_WORKSPACE:
+    RAW_DATA_DIR.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+    PROCESSED_DATA_DIR.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+    LOG_DIR.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
 
 
 # =========================================================
