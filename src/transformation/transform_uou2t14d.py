@@ -32,12 +32,24 @@ def latest_publication_file() -> Path:
     return files[-1]
 
 
-def load_latest_publication() -> pd.DataFrame:
-    """Load latest raw publication."""
+def load_publication_file(
+    file_path: Path,
+) -> pd.DataFrame:
+    """Load one explicit canonical publication."""
 
-    file_path = latest_publication_file()
+    file_path = Path(file_path)
+
+    if not file_path.exists():
+        raise FileNotFoundError(
+            f"Canonical publication not found: {file_path}"
+        )
 
     df = pd.read_parquet(file_path)
+
+    if df.empty:
+        raise ValueError(
+            f"Canonical publication is empty: {file_path}"
+        )
 
     df["forecastDate"] = pd.to_datetime(
         df["forecastDate"],
@@ -55,7 +67,28 @@ def load_latest_publication() -> pd.DataFrame:
         errors="coerce",
     )
 
+    publish_times = (
+        df["publishTime"]
+        .dropna()
+        .drop_duplicates()
+    )
+
+    if len(publish_times) != 1:
+        raise ValueError(
+            "Expected exactly one publishTime in "
+            f"{file_path.name}, but found "
+            f"{len(publish_times)}."
+        )
+
     return df
+
+
+def load_latest_publication() -> pd.DataFrame:
+    """Load latest raw publication."""
+
+    return load_publication_file(
+        latest_publication_file()
+    )
 
 
 def build_fuel_availability(
@@ -175,18 +208,48 @@ def save_processed_tables(
     print(f"  {system_path}")
 
 
-def main() -> None:
-    """Transform latest UOU2T14D publication."""
+def transform_publication_file(
+    file_path: Path,
+):
+    """Transform one explicit canonical publication."""
 
-    source_file = latest_publication_file()
-    df = load_latest_publication()
+    file_path = Path(file_path)
 
-    fuel_availability = build_fuel_availability(df)
-    system_availability = build_system_availability(df)
+    df = load_publication_file(
+        file_path
+    )
+
+    fuel_availability = build_fuel_availability(
+        df
+    )
+
+    system_availability = build_system_availability(
+        df
+    )
 
     save_processed_tables(
         fuel_availability,
         system_availability,
+    )
+
+    return (
+        df,
+        fuel_availability,
+        system_availability,
+    )
+
+
+def main() -> None:
+    """Transform latest UOU2T14D publication."""
+
+    source_file = latest_publication_file()
+
+    (
+        df,
+        fuel_availability,
+        system_availability,
+    ) = transform_publication_file(
+        source_file
     )
 
     print()

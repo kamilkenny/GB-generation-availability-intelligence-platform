@@ -74,17 +74,45 @@ def prepare_dataframe(
     ]
 
 
-def load_publication() -> None:
-    """Load latest raw publication idempotently."""
+def load_publication_file(
+    file_path: Path,
+) -> dict:
+    """Load one explicit canonical publication idempotently."""
 
-    file_path = latest_canonical_publication()
+    file_path = Path(file_path)
+
+    if not file_path.exists():
+        raise FileNotFoundError(
+            f"Canonical publication not found: {file_path}"
+        )
 
     df = pd.read_parquet(file_path)
+
+    if df.empty:
+        raise ValueError(
+            f"Canonical publication is empty: {file_path}"
+        )
+
     df = prepare_dataframe(df)
 
-    engine = get_engine()
+    publish_times = (
+        df["publish_time"]
+        .dropna()
+        .drop_duplicates()
+    )
 
-    publish_time = df["publish_time"].iloc[0]
+    if len(publish_times) != 1:
+        raise ValueError(
+            "Expected exactly one publish_time in "
+            f"{file_path.name}, but found "
+            f"{len(publish_times)}."
+        )
+
+    publish_time = pd.Timestamp(
+        publish_times.iloc[0]
+    )
+
+    engine = get_engine()
 
     with engine.begin() as connection:
 
@@ -97,7 +125,8 @@ def load_publication() -> None:
                 """
             ),
             {
-                "publish_time": publish_time.to_pydatetime()
+                "publish_time":
+                    publish_time.to_pydatetime()
             },
         ).scalar_one()
 
@@ -105,22 +134,33 @@ def load_publication() -> None:
             print()
             print("DATABASE LOAD RESULT")
             print("--------------------")
-            print("Status: PUBLICATION ALREADY LOADED")
+            print(
+                "Status: PUBLICATION ALREADY LOADED"
+            )
+            print("Source file:", file_path)
             print("Publish time:", publish_time)
-            print("Existing rows:", f"{existing_count:,}")
-            return
+            print(
+                "Existing rows:",
+                f"{existing_count:,}",
+            )
 
-    df.to_sql(
-        name="uou2t14d",
-        con=engine,
-        schema="raw",
-        if_exists="append",
-        index=False,
-        method="multi",
-        chunksize=1000,
-    )
+            return {
+                "status": "already_loaded",
+                "file_path": file_path,
+                "publish_time": publish_time,
+                "rows": int(existing_count),
+            }
 
-    with engine.connect() as connection:
+        df.to_sql(
+            name="uou2t14d",
+            con=connection,
+            schema="raw",
+            if_exists="append",
+            index=False,
+            method="multi",
+            chunksize=1000,
+        )
+
         row_count = connection.execute(
             text(
                 """
@@ -130,7 +170,8 @@ def load_publication() -> None:
                 """
             ),
             {
-                "publish_time": publish_time.to_pydatetime()
+                "publish_time":
+                    publish_time.to_pydatetime()
             },
         ).scalar_one()
 
@@ -141,6 +182,21 @@ def load_publication() -> None:
     print("Source file:", file_path)
     print("Publish time:", publish_time)
     print("Rows loaded:", f"{row_count:,}")
+
+    return {
+        "status": "loaded",
+        "file_path": file_path,
+        "publish_time": publish_time,
+        "rows": int(row_count),
+    }
+
+
+def load_publication() -> dict:
+    """Load the latest canonical Raw publication."""
+
+    return load_publication_file(
+        latest_canonical_publication()
+    )
 
 
 if __name__ == "__main__":
