@@ -6,3 +6,5 @@ psycopg2-binary
 pyarrow
 tenacity
 pytest
+
+pyspark==4.1.3

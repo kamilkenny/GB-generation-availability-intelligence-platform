@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   test:
-    name: Python 3.12 automated tests
+    name: Python 3.12 + Java 21 automated tests
 
     runs-on: ubuntu-latest
 
@@ -25,6 +25,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v6
@@ -38,6 +44,11 @@ jobs:
 
       - name: Install project dependencies
         run: python -m pip install -r requirements.txt
+
+      - name: Verify Spark runtime
+        run: |
+          java -version
+          python -c "import pyspark; print('PySpark:', pyspark.__version__)"
 
       - name: Run automated test suite
         run: python -m pytest -v
