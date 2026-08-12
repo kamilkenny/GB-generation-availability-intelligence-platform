@@ -141,3 +141,98 @@ class ElexonClient:
         df["collectedAt"] = pd.Timestamp.now(tz="UTC")
 
         return df
+
+
+    def get_generation_availability_by_publish_time(
+        self,
+        publish_datetime_from,
+        publish_datetime_to,
+        fuel_types: Optional[list[str]] = None,
+        bm_units: Optional[list[str]] = None,
+    ) -> pd.DataFrame:
+        """
+        Retrieve UOU2T14D records for a publication-time range.
+
+        Both publication boundaries are normalised to UTC
+        before being sent to the Elexon Insights API.
+        """
+
+        start = pd.Timestamp(
+            publish_datetime_from
+        )
+
+        end = pd.Timestamp(
+            publish_datetime_to
+        )
+
+        if start.tzinfo is None:
+            start = start.tz_localize("UTC")
+        else:
+            start = start.tz_convert("UTC")
+
+        if end.tzinfo is None:
+            end = end.tz_localize("UTC")
+        else:
+            end = end.tz_convert("UTC")
+
+        if start >= end:
+            raise ValueError(
+                "publish_datetime_from must be earlier "
+                "than publish_datetime_to."
+            )
+
+        params = {
+            "publishDateTimeFrom": (
+                start.strftime(
+                    "%Y-%m-%dT%H:%M:%SZ"
+                )
+            ),
+            "publishDateTimeTo": (
+                end.strftime(
+                    "%Y-%m-%dT%H:%M:%SZ"
+                )
+            ),
+        }
+
+        if fuel_types:
+            params["fuelType"] = fuel_types
+
+        if bm_units:
+            params["bmUnit"] = bm_units
+
+        response = self._get(
+            "/datasets/UOU2T14D/stream",
+            params=params,
+        )
+
+        payload = response.json()
+
+        if not isinstance(payload, list):
+            raise ElexonAPIError(
+                "Unexpected UOU2T14D response format. "
+                "Expected a JSON list."
+            )
+
+        df = pd.DataFrame(payload)
+
+        if df.empty:
+            return df
+
+        if "publishTime" in df.columns:
+            df["publishTime"] = pd.to_datetime(
+                df["publishTime"],
+                utc=True,
+                errors="coerce",
+            )
+
+        if "forecastDate" in df.columns:
+            df["forecastDate"] = pd.to_datetime(
+                df["forecastDate"],
+                errors="coerce",
+            )
+
+        df["collectedAt"] = pd.Timestamp.now(
+            tz="UTC"
+        )
+
+        return df
