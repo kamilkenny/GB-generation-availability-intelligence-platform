@@ -224,3 +224,74 @@ def test_snapshot_can_use_custom_directory(tmp_path):
     )
 
     assert created_again is False
+
+
+def test_repair_converts_nanosecond_parquet_to_microseconds(
+    tmp_path,
+):
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+
+    from src.ingestion.collect_uou2t14d import (
+        repair_spark_compatible_parquet,
+    )
+
+    parquet_path = (
+        tmp_path
+        / "uou2t14d_publish_20260812T220000Z.parquet"
+    )
+
+    table = pa.table(
+        {
+            "publishTime": pa.array(
+                [
+                    pd.Timestamp(
+                        "2026-08-12T22:00:00.123456789Z"
+                    )
+                ],
+                type=pa.timestamp(
+                    "ns",
+                    tz="UTC",
+                ),
+            ),
+        }
+    )
+
+    pq.write_table(
+        table,
+        parquet_path,
+        version="2.6",
+    )
+
+    before = pq.read_schema(
+        parquet_path
+    )
+
+    assert (
+        before.field("publishTime").type.unit
+        == "ns"
+    )
+
+    repaired = (
+        repair_spark_compatible_parquet(
+            parquet_path
+        )
+    )
+
+    after = pq.read_schema(
+        parquet_path
+    )
+
+    assert repaired is True
+    assert (
+        after.field("publishTime").type.unit
+        == "us"
+    )
+
+    repaired_again = (
+        repair_spark_compatible_parquet(
+            parquet_path
+        )
+    )
+
+    assert repaired_again is False

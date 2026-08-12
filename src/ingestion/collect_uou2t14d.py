@@ -155,6 +155,74 @@ def publication_file_stamp(
     )
 
 
+def write_spark_compatible_parquet(
+    df: pd.DataFrame,
+    parquet_path: Path,
+) -> None:
+    """Write Parquet using Spark-compatible timestamp resolution."""
+
+    df.to_parquet(
+        parquet_path,
+        index=False,
+        engine="pyarrow",
+        version="1.0",
+        coerce_timestamps="us",
+        allow_truncated_timestamps=True,
+    )
+
+
+def repair_spark_compatible_parquet(
+    parquet_path: Path,
+) -> bool:
+    """Rewrite Parquet only when nanosecond timestamps are present."""
+
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+
+    schema = pq.read_schema(parquet_path)
+
+    has_nanosecond_timestamp = any(
+        pa.types.is_timestamp(field.type)
+        and field.type.unit == "ns"
+        for field in schema
+    )
+
+    if not has_nanosecond_timestamp:
+        return False
+
+    existing_df = pd.read_parquet(
+        parquet_path,
+        engine="pyarrow",
+    )
+
+    write_spark_compatible_parquet(
+        existing_df,
+        parquet_path,
+    )
+
+    return True
+
+
+def repair_snapshot_directory(
+    snapshot_directory: Path,
+) -> list[Path]:
+    """Repair incompatible canonical Parquet timestamp encodings."""
+
+    repaired = []
+
+    for parquet_path in sorted(
+        Path(snapshot_directory).glob(
+            "uou2t14d_publish_*.parquet"
+        )
+    ):
+        if repair_spark_compatible_parquet(
+            parquet_path
+        ):
+            repaired.append(parquet_path)
+
+    return repaired
+
+
 def save_snapshot(
     df: pd.DataFrame,
     validation_results: dict,
@@ -199,9 +267,9 @@ def save_snapshot(
     if parquet_path.exists():
         return parquet_path, metadata_path, False
 
-    df.to_parquet(
+    write_spark_compatible_parquet(
+        df,
         parquet_path,
-        index=False,
     )
 
     forecast_dates = pd.to_datetime(
@@ -275,6 +343,16 @@ def collect_latest_publication(
         snapshot_directory=snapshot_directory,
     )
 
+    active_snapshot_directory = (
+        Path(snapshot_directory)
+        if snapshot_directory is not None
+        else RAW_DATA_DIR / "uou2t14d"
+    )
+
+    repaired_files = repair_snapshot_directory(
+        active_snapshot_directory
+    )
+
     return {
         "publication_time": publication_time,
         "rows": int(len(df)),
@@ -288,6 +366,10 @@ def collect_latest_publication(
         "parquet_path": parquet_path,
         "metadata_path": metadata_path,
         "created": created,
+        "repaired_files": [
+            str(path)
+            for path in repaired_files
+        ],
     }
 
 
