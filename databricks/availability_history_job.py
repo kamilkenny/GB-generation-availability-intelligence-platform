@@ -17,36 +17,49 @@ if str(PROJECT_ROOT) not in sys.path:
 
 
 from src.pipeline.spark_availability_pipeline import (
-    run_spark_pipeline,
+    run_databricks_pipeline,
 )
 
 
+DEFAULT_RAW_DIRECTORY = (
+    "/Volumes/workspace/"
+    "gb_generation/"
+    "raw_uou2t14d"
+)
+
+DEFAULT_CATALOG = "workspace"
+DEFAULT_SCHEMA = "gb_generation"
+
+
 def parse_args() -> argparse.Namespace:
-    """Parse Databricks or local job parameters."""
+    """Parse Databricks job parameters."""
 
     parser = argparse.ArgumentParser(
         description=(
             "Run GB generation availability "
-            "Spark analytics."
+            "analytics in Databricks."
         )
     )
 
     parser.add_argument(
         "--raw-directory",
-        required=True,
+        default=DEFAULT_RAW_DIRECTORY,
         help=(
-            "Directory containing canonical "
-            "UOU2T14D Parquet publications."
+            "Unity Catalog volume containing "
+            "canonical UOU2T14D publications."
         ),
     )
 
     parser.add_argument(
-        "--output-directory",
-        required=True,
-        help=(
-            "Directory for persistent Spark "
-            "analytical outputs."
-        ),
+        "--catalog",
+        default=DEFAULT_CATALOG,
+        help="Unity Catalog catalogue.",
+    )
+
+    parser.add_argument(
+        "--schema",
+        default=DEFAULT_SCHEMA,
+        help="Unity Catalog schema.",
     )
 
     return parser.parse_args()
@@ -100,23 +113,23 @@ def get_spark_session() -> tuple[
 def execute_job(
     spark: SparkSession,
     raw_directory: str,
-    output_directory: str,
+    catalog: str,
+    schema: str,
 ) -> dict:
-    """Execute the shared Spark pipeline."""
+    """Execute the Databricks Spark pipeline."""
 
-    return run_spark_pipeline(
+    return run_databricks_pipeline(
         spark,
         raw_directory=Path(
             raw_directory
         ),
-        output_directory=Path(
-            output_directory
-        ),
+        catalog=catalog,
+        schema=schema,
     )
 
 
 def main() -> None:
-    """Run the availability analytics job."""
+    """Run the Databricks availability job."""
 
     args = parse_args()
 
@@ -134,9 +147,8 @@ def main() -> None:
             raw_directory=(
                 args.raw_directory
             ),
-            output_directory=(
-                args.output_directory
-            ),
+            catalog=args.catalog,
+            schema=args.schema,
         )
 
         print()
@@ -168,10 +180,10 @@ def main() -> None:
 
         print()
         print(
-            "ANALYTICAL OUTPUTS"
+            "UNITY CATALOG TABLES"
         )
         print(
-            "------------------"
+            "--------------------"
         )
 
         for name, count in (
@@ -179,6 +191,21 @@ def main() -> None:
         ):
             print(
                 f"{name}: {count}"
+            )
+
+        print()
+        print(
+            "TABLE LOCATIONS"
+        )
+        print(
+            "---------------"
+        )
+
+        for name, table_name in (
+            result["table_names"].items()
+        ):
+            print(
+                f"{name}: {table_name}"
             )
 
     finally:

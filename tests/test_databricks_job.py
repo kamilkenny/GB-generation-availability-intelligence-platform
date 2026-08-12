@@ -23,7 +23,33 @@ JOB = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(JOB)
 
 
-def test_parse_args_accepts_storage_paths(
+def test_parse_args_uses_databricks_defaults(
+    monkeypatch,
+):
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "availability_history_job.py",
+        ],
+    )
+
+    args = JOB.parse_args()
+
+    assert (
+        args.raw_directory
+        == (
+            "/Volumes/workspace/"
+            "gb_generation/"
+            "raw_uou2t14d"
+        )
+    )
+
+    assert args.catalog == "workspace"
+    assert args.schema == "gb_generation"
+
+
+def test_parse_args_accepts_overrides(
     monkeypatch,
 ):
     monkeypatch.setattr(
@@ -32,9 +58,11 @@ def test_parse_args_accepts_storage_paths(
         [
             "availability_history_job.py",
             "--raw-directory",
-            "/Volumes/energy/raw/uou2t14d",
-            "--output-directory",
-            "/Volumes/energy/processed/uou2t14d",
+            "/Volumes/custom/raw",
+            "--catalog",
+            "custom_catalog",
+            "--schema",
+            "custom_schema",
         ],
     )
 
@@ -42,16 +70,21 @@ def test_parse_args_accepts_storage_paths(
 
     assert (
         args.raw_directory
-        == "/Volumes/energy/raw/uou2t14d"
+        == "/Volumes/custom/raw"
     )
 
     assert (
-        args.output_directory
-        == "/Volumes/energy/processed/uou2t14d"
+        args.catalog
+        == "custom_catalog"
+    )
+
+    assert (
+        args.schema
+        == "custom_schema"
     )
 
 
-def test_execute_job_uses_shared_pipeline(
+def test_execute_job_uses_databricks_pipeline(
     monkeypatch,
 ):
     captured = {}
@@ -63,48 +96,76 @@ def test_execute_job_uses_shared_pipeline(
         "row_counts": {
             "system_availability_history": 2,
         },
+        "table_names": {
+            "system_availability_history":
+                (
+                    "workspace."
+                    "gb_generation."
+                    "system_availability_history"
+                ),
+        },
     }
 
-    def fake_run_spark_pipeline(
+    def fake_run_databricks_pipeline(
         spark,
         raw_directory,
-        output_directory,
+        catalog,
+        schema,
     ):
         captured["spark"] = spark
+
         captured["raw_directory"] = (
             raw_directory
         )
-        captured["output_directory"] = (
-            output_directory
-        )
+
+        captured["catalog"] = catalog
+        captured["schema"] = schema
 
         return expected_result
 
     monkeypatch.setattr(
         JOB,
-        "run_spark_pipeline",
-        fake_run_spark_pipeline,
+        "run_databricks_pipeline",
+        fake_run_databricks_pipeline,
     )
 
     fake_spark = object()
 
     result = JOB.execute_job(
         fake_spark,
-        raw_directory="/raw/uou2t14d",
-        output_directory="/processed/uou2t14d",
+        raw_directory=(
+            "/Volumes/workspace/"
+            "gb_generation/"
+            "raw_uou2t14d"
+        ),
+        catalog="workspace",
+        schema="gb_generation",
     )
 
     assert result == expected_result
-    assert captured["spark"] is fake_spark
 
     assert (
-        captured["raw_directory"]
-        == Path("/raw/uou2t14d")
+        captured["spark"]
+        is fake_spark
     )
 
     assert (
-        captured["output_directory"]
-        == Path("/processed/uou2t14d")
+        captured["raw_directory"]
+        == Path(
+            "/Volumes/workspace/"
+            "gb_generation/"
+            "raw_uou2t14d"
+        )
+    )
+
+    assert (
+        captured["catalog"]
+        == "workspace"
+    )
+
+    assert (
+        captured["schema"]
+        == "gb_generation"
     )
 
 

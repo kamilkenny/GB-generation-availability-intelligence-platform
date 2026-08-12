@@ -105,6 +105,82 @@ def write_analytical_outputs(
     return output_paths
 
 
+
+def write_unity_catalog_tables(
+    datasets: dict[str, DataFrame],
+    catalog: str = "workspace",
+    schema: str = "gb_generation",
+) -> dict[str, str]:
+    """Persist analytical datasets as managed Delta tables."""
+
+    table_names = {}
+
+    for name, dataframe in datasets.items():
+        full_table_name = (
+            f"{catalog}.{schema}.{name}"
+        )
+
+        (
+            dataframe.write
+            .format("delta")
+            .mode("overwrite")
+            .option(
+                "overwriteSchema",
+                "true",
+            )
+            .saveAsTable(
+                full_table_name
+            )
+        )
+
+        table_names[name] = (
+            full_table_name
+        )
+
+    return table_names
+
+
+def run_databricks_pipeline(
+    spark: SparkSession,
+    raw_directory: Path,
+    catalog: str = "workspace",
+    schema: str = "gb_generation",
+) -> dict:
+    """Run analytics and persist Unity Catalog Delta tables."""
+
+    raw_df = read_canonical_history(
+        spark,
+        raw_directory=raw_directory,
+    )
+
+    quality = validate_canonical_history(
+        raw_df
+    )
+
+    datasets = build_analytical_datasets(
+        raw_df
+    )
+
+    row_counts = {
+        name: dataframe.count()
+        for name, dataframe in datasets.items()
+    }
+
+    table_names = (
+        write_unity_catalog_tables(
+            datasets,
+            catalog=catalog,
+            schema=schema,
+        )
+    )
+
+    return {
+        "quality": quality,
+        "row_counts": row_counts,
+        "table_names": table_names,
+    }
+
+
 def run_spark_pipeline(
     spark: SparkSession,
     raw_directory: Path = RAW_DIRECTORY,
