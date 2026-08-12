@@ -1,0 +1,48 @@
+bundle:
+  name: gb-generation-availability-intelligence
+
+sync:
+  include:
+    - databricks/**
+    - src/**
+    - config/**
+  exclude:
+    - data/**
+    - tests/**
+    - .venv/**
+    - .git/**
+
+resources:
+  jobs:
+    availability_history:
+      name: gb-generation-availability-history
+
+      tasks:
+        - task_key: build_availability_history
+
+          spark_python_task:
+            python_file: ./databricks/availability_history_job.py
+            parameters:
+              - --raw-directory
+              - /Volumes/workspace/gb_generation/raw_uou2t14d
+              - --catalog
+              - workspace
+              - --schema
+              - gb_generation
+
+          environment_key: default
+
+      environments:
+        - environment_key: default
+          spec:
+            environment_version: "2"
+            dependencies:
+              - python-dotenv
+
+targets:
+  dev:
+    mode: development
+    default: true
+
+    workspace:
+      host: https://dbc-c53b6e0a-fb34.cloud.databricks.com
