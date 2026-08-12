@@ -8,6 +8,9 @@ from src.analytics.build_availability_revisions import (
 from src.database.load_silver_availability import (
     main as load_silver,
 )
+from src.database.load_revision_analytics import (
+    main as load_revision_analytics,
+)
 from src.database.load_uou2t14d import (
     latest_canonical_publication,
     load_publication,
@@ -84,7 +87,7 @@ def main() -> None:
     try:
         current_stage = "Elexon ingestion"
         print()
-        print("[1/5] Elexon ingestion")
+        print("[1/6] Elexon ingestion")
         collect_uou2t14d()
 
         (
@@ -105,23 +108,49 @@ def main() -> None:
 
         current_stage = "availability transformation"
         print()
-        print("[2/5] Availability transformation")
+        print("[2/6] Availability transformation")
         transform_uou2t14d()
 
         current_stage = "Raw PostgreSQL load"
         print()
-        print("[3/5] Raw PostgreSQL load")
+        print("[3/6] Raw PostgreSQL load")
         load_publication()
 
         current_stage = "Silver PostgreSQL load"
         print()
-        print("[4/5] Silver PostgreSQL load")
+        print("[4/6] Silver PostgreSQL load")
         load_silver()
 
         current_stage = "revision intelligence"
         print()
-        print("[5/5] Revision intelligence")
+        print("[5/6] Revision intelligence")
         build_revisions()
+
+        publication_count = len(
+            list(
+                source_file.parent.glob(
+                    "uou2t14d_publish_*.parquet"
+                )
+            )
+        )
+
+        current_stage = (
+            "Revision Analytics PostgreSQL load"
+        )
+
+        print()
+        print(
+            "[6/6] Revision Analytics "
+            "PostgreSQL load"
+        )
+
+        if publication_count >= 2:
+            load_revision_analytics()
+        else:
+            print(
+                "Skipped: fewer than two canonical "
+                "Elexon publications are available."
+            )
 
         complete_pipeline_run(
             pipeline_run_id=run_id,
