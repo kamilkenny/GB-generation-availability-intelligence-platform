@@ -140,9 +140,10 @@ def main() -> None:
         get_spark_session()
     )
 
-    spark.sparkContext.setLogLevel(
-        "ERROR"
-    )
+    if created_locally:
+        spark.sparkContext.setLogLevel(
+            "ERROR"
+        )
 
     try:
         result = execute_job(
