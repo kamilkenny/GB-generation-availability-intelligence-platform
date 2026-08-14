@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta
+        name="description"
+        content="Live Great Britain generation availability and revision intelligence powered by Elexon, Databricks and Azure."
+    >
+
+    <title>{{ title }}</title>
+
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+
+<body>
+
+    <!-- =====================================================
+         HERO
+         ===================================================== -->
+
+    <header class="hero">
+
+        <div class="hero-grid-overlay"></div>
+        <div class="hero-glow hero-glow-one"></div>
+        <div class="hero-glow hero-glow-two"></div>
+
+        <div class="hero-inner">
+
+            <div class="hero-topline">
+
+                <div class="brand-mark">
+                    <div class="brand-icon">GB</div>
+
+                    <div>
+                        <div class="eyebrow">
+                            ENERGY DATA INTELLIGENCE PLATFORM
+                        </div>
+
+                        <div class="developer-credit">
+                            Developed &amp; modelled by
+                            <strong>Kamil Ridwan</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="hero-status-group">
+
+                    <div class="auto-refresh-pill">
+                        <span class="mini-icon">↻</span>
+                        Auto refresh · 5 min
+                    </div>
+
+                    <div class="live-pill">
+                        <span class="live-dot"></span>
+                        LIVE
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="hero-content">
+
+                <div class="hero-copy">
+
+                    <div class="hero-kicker">
+                        GREAT BRITAIN GENERATION INTELLIGENCE
+                    </div>
+
+                    <h1>
+                        GB Generation Availability
+                        <span>Intelligence</span>
+                    </h1>
+
+                    <p class="hero-description">
+                        Live generation availability, publication tracking
+                        and revision intelligence built from Elexon data
+                        and served directly from Databricks Unity Catalog.
+                    </p>
+
+                    <div class="hero-meta">
+
+                        <div class="hero-meta-item">
+                            <span>Latest publication</span>
+
+                            <strong id="hero-publication">
+                                Loading live data...
+                            </strong>
+                        </div>
+
+                        <div class="hero-meta-divider"></div>
+
+                        <div class="hero-meta-item">
+                            <span>Platform</span>
+
+                            <strong>
+                                Databricks + Azure
+                            </strong>
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <aside class="hero-live-panel">
+
+                    <div class="live-panel-top">
+
+                        <div>
+                            <span class="panel-overline">
+                                CURRENT SYSTEM POSITION
+                            </span>
+
+                            <h2 id="hero-system-mw">
+                                Loading...
+                            </h2>
+                        </div>
+
+                        <div class="pulse-orb">
+                            <span></span>
+                        </div>
+
+                    </div>
+
+                    <p class="live-panel-description">
+                        Latest system available generation capacity
+                    </p>
+
+                    <div class="live-panel-grid">
+
+                        <div>
+                            <span>Data status</span>
+                            <strong class="success-text">
+                                ● Live
+                            </strong>
+                        </div>
+
+                        <div>
+                            <span>Source</span>
+                            <strong>Elexon</strong>
+                        </div>
+
+                        <div>
+                            <span>Storage</span>
+                            <strong>Delta Lake</strong>
+                        </div>
+
+                        <div>
+                            <span>Serving</span>
+                            <strong>Azure API</strong>
+                        </div>
+
+                    </div>
+
+                </aside>
+
+            </div>
+
+        </div>
+    </header>
+
+
+    <!-- =====================================================
+         PIPELINE STATUS
+         ===================================================== -->
+
+    <section class="pipeline-strip">
+
+        <div class="pipeline-inner">
+
+            <div class="pipeline-title">
+                <span class="pipeline-pulse"></span>
+                LIVE DATA PIPELINE
+            </div>
+
+            <div class="pipeline-flow">
+
+                <div class="pipeline-node">
+                    <span class="node-check">✓</span>
+                    <div>
+                        <strong>Elexon</strong>
+                        <small>Source API</small>
+                    </div>
+                </div>
+
+                <span class="pipeline-arrow">→</span>
+
+                <div class="pipeline-node">
+                    <span class="node-check">✓</span>
+                    <div>
+                        <strong>Databricks</strong>
+                        <small>Hourly processing</small>
+                    </div>
+                </div>
+
+                <span class="pipeline-arrow">→</span>
+
+                <div class="pipeline-node">
+                    <span class="node-check">✓</span>
+                    <div>
+                        <strong>Unity Catalog</strong>
+                        <small>Managed Delta</small>
+                    </div>
+                </div>
+
+                <span class="pipeline-arrow">→</span>
+
+                <div class="pipeline-node">
+                    <span class="node-check">✓</span>
+                    <div>
+                        <strong>Azure</strong>
+                        <small>Web application</small>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </section>
+
+
+    <!-- =====================================================
+         NAVIGATION
+         ===================================================== -->
+
+    <nav class="dashboard-nav">
+
+        <div class="dashboard-nav-inner">
+
+            <a href="#overview" class="nav-link active">
+                Overview
+            </a>
+
+            <a href="#availability" class="nav-link">
+                Availability
+            </a>
+
+            <a href="#revisions" class="nav-link">
+                Revisions
+            </a>
+
+            <a href="#platform" class="nav-link">
+                Data &amp; Platform
+            </a>
+
+        </div>
+
+    </nav>
+
+
+    <!-- =====================================================
+         MAIN DASHBOARD
+         ===================================================== -->
+
+    <main class="dashboard-container" id="overview">
+
+        <!-- KPI HEADER -->
+
+        <section class="section-intro">
+
+            <div>
+                <span class="section-overline">
+                    EXECUTIVE INTELLIGENCE
+                </span>
+
+                <h2>Live generation position</h2>
+
+                <p>
+                    Current headline intelligence from the latest
+                    successfully published Databricks dataset.
+                </p>
+            </div>
+
+            <div class="data-freshness">
+                <span class="freshness-dot"></span>
+
+                <div>
+                    <small>DATA CONNECTION</small>
+                    <strong id="refresh-status">
+                        Connecting to Databricks...
+                    </strong>
+                </div>
+            </div>
+
+        </section>
+
+
+        <!-- KPIs -->
+
+        <section class="kpi-grid">
+
+            <article class="kpi-card accent-blue">
+
+                <div class="kpi-card-top">
+                    <div class="kpi-icon">◷</div>
+                    <span class="kpi-tag">LATEST</span>
+                </div>
+
+                <span class="kpi-label">
+                    Latest Publication
+                </span>
+
+                <strong
+                    id="latest-publication"
+                    class="kpi-value publication-value"
+                >
+                    Loading...
+                </strong>
+
+                <p>
+                    Most recent Elexon publication currently
+                    available to the analytical platform.
+                </p>
+
+            </article>
+
+
+            <article class="kpi-card accent-teal">
+
+                <div class="kpi-card-top">
+                    <div class="kpi-icon">⚡</div>
+                    <span class="kpi-tag">SYSTEM</span>
+                </div>
+
+                <span class="kpi-label">
+                    System Available MW
+                </span>
+
+                <strong
+                    id="system-available-mw"
+                    class="kpi-value"
+                >
+                    Loading...
+                </strong>
+
+                <p>
+                    Available generation at the nearest forecast
+                    point from the latest publication.
+                </p>
+
+            </article>
+
+
+            <article class="kpi-card accent-purple">
+
+                <div class="kpi-card-top">
+                    <div class="kpi-icon">▦</div>
+                    <span class="kpi-tag">HISTORY</span>
+                </div>
+
+                <span class="kpi-label">
+                    Publications Loaded
+                </span>
+
+                <strong
+                    id="publications-loaded"
+                    class="kpi-value"
+                >
+                    Loading...
+                </strong>
+
+                <p>
+                    Distinct publication snapshots retained for
+                    historical and revision intelligence.
+                </p>
+
+            </article>
+
+
+            <article class="kpi-card accent-amber">
+
+                <div class="kpi-card-top">
+                    <div class="kpi-icon">◎</div>
+                    <span class="kpi-tag">COVERAGE</span>
+                </div>
+
+                <span class="kpi-label">
+                    Fuel Types Tracked
+                </span>
+
+                <strong
+                    id="fuel-types-tracked"
+                    class="kpi-value"
+                >
+                    Loading...
+                </strong>
+
+                <p>
+                    Generation fuel categories represented within
+                    the live availability dataset.
+                </p>
+
+            </article>
+
+        </section>
+
+
+        <!-- AVAILABILITY -->
+
+        <section
+            class="dashboard-section"
+            id="availability"
+        >
+
+            <div class="section-heading-row">
+
+                <div>
+                    <span class="section-overline">
+                        AVAILABILITY OUTLOOK
+                    </span>
+
+                    <h2>
+                        System generation availability
+                    </h2>
+
+                    <p>
+                        Forward availability intelligence from
+                        the latest publication.
+                    </p>
+                </div>
+
+                <div class="section-badge">
+                    LIVE FORECAST
+                </div>
+
+            </div>
+
+
+            <div class="hero-chart-layout">
+
+                <article class="chart-card chart-card-large">
+
+                    <div class="chart-header">
+
+                        <div>
+                            <span class="chart-eyebrow">
+                                SYSTEM OUTLOOK
+                            </span>
+
+                            <h3>
+                                System Available MW by Forecast Date
+                            </h3>
+
+                            <p>
+                                Latest published system availability
+                                across the forward forecast horizon.
+                            </p>
+                        </div>
+
+                        <div class="chart-status">
+                            <span></span>
+                            Databricks live
+                        </div>
+
+                    </div>
+
+                    <div class="live-chart-container">
+                        <canvas
+                            id="system-availability-chart"
+                            width="1200"
+                            height="340"
+                        ></canvas>
+
+                        <div
+                            id="system-chart-message"
+                            class="chart-message"
+                        >
+                            Loading live forecast...
+                        </div>
+                    </div>
+
+
+                    <div
+                        id="system-availability-note"
+                        class="visual-explainer"
+                    >
+                        <strong>How to read:</strong>
+                        Each point shows expected available generation
+                        capacity for that forecast date from the latest
+                        publication. Higher values indicate more capacity
+                        is expected to be available; lower values indicate
+                        a tighter availability position. This is forecast
+                        availability, not actual metered generation.
+                    </div>
+
+</article>
+
+
+                <aside class="intelligence-panel">
+
+                    <span class="panel-overline">
+                        CURRENT POSITION
+                    </span>
+
+                    <div class="position-number">
+                        <strong id="current-system-mw">
+                            Loading...
+                        </strong>
+
+                        <span>
+                            available generation
+                        </span>
+                    </div>
+
+                    <div class="position-divider"></div>
+
+                    <div class="position-list">
+
+                        <div>
+                            <span>Publication</span>
+                            <strong id="current-publication">
+                                Loading...
+                            </strong>
+                        </div>
+
+                        <div>
+                            <span>Pipeline</span>
+                            <strong class="success-text">
+                                ● Operational
+                            </strong>
+                        </div>
+
+                        <div>
+                            <span>Warehouse</span>
+                            <strong>
+                                Serverless SQL
+                            </strong>
+                        </div>
+
+                        <div>
+                            <span>Refresh cadence</span>
+                            <strong>
+                                5 minutes
+                            </strong>
+                        </div>
+
+                    </div>
+
+                    <div class="position-note">
+                        <span>i</span>
+
+                        Values are served from the live Unity
+                        Catalog analytical tables.
+                    </div>
+
+                </aside>
+
+            </div>
+
+
+            <div class="two-column-grid">
+
+                <article class="chart-card">
+
+                    <div class="chart-header">
+
+                        <div>
+                            <span class="chart-eyebrow">
+                                FUEL MIX
+                            </span>
+
+                            <h3>
+                                Available MW by Fuel Type
+                            </h3>
+
+                            <p>
+                                Generation availability contribution
+                                across fuel categories.
+                            </p>
+                        </div>
+
+                    </div>
+
+                    <div class="fuel-chart-container">
+                        <canvas
+                            id="fuel-availability-chart"
+                            width="760"
+                            height="470"
+                        ></canvas>
+
+                        <div
+                            id="fuel-chart-message"
+                            class="chart-message"
+                        >
+                            Loading live fuel availability...
+                        </div>
+                    </div>
+
+
+                    <div
+                        id="fuel-availability-note"
+                        class="visual-explainer"
+                    >
+                        <strong>How to read:</strong>
+                        Longer bars mean more available MW from that
+                        generation or interconnector category.
+                        <strong>Coverage:</strong>
+                        Elexon/Balancing Mechanism data does not fully
+                        capture embedded generation, particularly
+                        distributed solar PV. Some renewables may therefore
+                        be absent even though they are contributing to
+                        Great Britain electricity supply.
+                    </div>
+
+</article>
+
+
+                <article class="chart-card">
+
+                    <div class="chart-header">
+
+                        <div>
+                            <span class="chart-eyebrow">
+                                CAPACITY MIX
+                            </span>
+
+                            <h3>
+                                Share of Available MW
+                            </h3>
+
+                            <p>
+                                Relative contribution of each fuel
+                                type to available capacity.
+                            </p>
+                        </div>
+
+                    </div>
+
+                    <div class="fuel-share-chart-container">
+                        <canvas
+                            id="fuel-share-chart"
+                            width="520"
+                            height="420"
+                        ></canvas>
+
+                        <div
+                            id="fuel-share-message"
+                            class="chart-message"
+                        >
+                            Loading live capacity mix...
+                        </div>
+                    </div>
+
+
+                    <div
+                        id="fuel-share-note"
+                        class="visual-explainer"
+                    >
+                        <strong>How to read:</strong>
+                        Each slice shows that category's percentage share
+                        of the total available MW represented in the
+                        dataset. Larger slices contribute more to the
+                        available capacity mix, while smaller categories
+                        are grouped as <em>Other categories</em>.
+                        The same embedded-generation coverage limitation
+                        described alongside the fuel chart also applies.
+                    </div>
+
+</article>
+
+            </div>
+
+        </section>
+
+
+        <!-- REVISIONS -->
+
+        <section
+            class="dashboard-section"
+            id="revisions"
+        >
+
+            <div class="section-heading-row">
+
+                <div>
+                    <span class="section-overline">
+                        REVISION INTELLIGENCE
+                    </span>
+
+                    <h2>
+                        Publication change intelligence
+                    </h2>
+
+                    <p>
+                        Identify where expected generation
+                        availability is changing between publications.
+                    </p>
+                </div>
+
+            </div>
+
+
+            <div class="two-column-grid">
+
+                <article class="chart-card">
+
+                    <div class="chart-header">
+
+                        <div>
+                            <span class="chart-eyebrow">
+                                LAST 24 HOURS
+                            </span>
+
+                            <h3>
+                                Net Revision Impact by Fuel Type
+                            </h3>
+
+                            <p>
+                                Positive and negative availability
+                                movements aggregated by fuel.
+                            </p>
+                        </div>
+
+                    </div>
+
+                    <div class="revision-chart-container">
+                        <canvas
+                            id="fuel-revision-chart"
+                            width="760"
+                            height="360"
+                        ></canvas>
+
+                        <div
+                            id="fuel-revision-message"
+                            class="chart-message"
+                        >
+                            Loading live revision intelligence...
+                        </div>
+                    </div>
+
+
+                    <div
+                        id="fuel-revision-note"
+                        class="visual-explainer"
+                    >
+                        <strong>How to read:</strong>
+                        Green bars extending right show upward availability
+                        revisions; red bars extending left show downward
+                        revisions during the latest 24 hours. Larger bars
+                        indicate larger cumulative forecast changes.
+                        These values measure revision activity across
+                        forecast dates, not an instantaneous change in
+                        current generation.
+                    </div>
+
+</article>
+
+
+                <article class="chart-card">
+
+                    <div class="chart-header">
+
+                        <div>
+                            <span class="chart-eyebrow">
+                                CHANGE PROFILE
+                            </span>
+
+                            <h3>
+                                Revision Direction Count
+                            </h3>
+
+                            <p>
+                                Historical distribution of upward,
+                                downward and unchanged revisions.
+                            </p>
+                        </div>
+
+                    </div>
+
+                    <div class="revision-direction-chart-container">
+                        <canvas
+                            id="revision-direction-chart"
+                            width="620"
+                            height="330"
+                        ></canvas>
+
+                        <div
+                            id="revision-direction-message"
+                            class="chart-message"
+                        >
+                            Loading revision direction history...
+                        </div>
+                    </div>
+
+
+                    <div
+                        id="revision-direction-note"
+                        class="visual-explainer"
+                    >
+                        <strong>How to read:</strong>
+                        Each bar counts historical unit availability
+                        revisions. <strong>Upward</strong> means forecast
+                        availability increased, <strong>Downward</strong>
+                        means it decreased, and <strong>Unchanged</strong>
+                        means no MW change was recorded. The strong
+                        Unchanged majority indicates that most published
+                        unit forecasts remain stable between revisions.
+                    </div>
+
+</article>
+
+            </div>
+
+
+            <div class="intelligence-strip">
+
+                <div class="intelligence-strip-title">
+                    <span>◆</span>
+
+                    <div>
+                        <small>
+                            LATEST MARKET INTELLIGENCE
+                        </small>
+
+                        <strong>
+                            Revision signals
+                        </strong>
+                    </div>
+                </div>
+
+                <div class="intelligence-stat">
+                    <span>Largest upward revision</span>
+
+                    <strong
+                        id="largest-upward-value"
+                        class="positive-text"
+                    >
+                        Loading...
+                    </strong>
+
+                    <small
+                        id="largest-upward-detail"
+                        class="intelligence-detail"
+                    >
+                        Latest 24-hour window
+                    </small>
+                </div>
+
+                <div class="intelligence-stat">
+                    <span>Largest downward revision</span>
+
+                    <strong
+                        id="largest-downward-value"
+                        class="negative-text"
+                    >
+                        Loading...
+                    </strong>
+
+                    <small
+                        id="largest-downward-detail"
+                        class="intelligence-detail"
+                    >
+                        Latest 24-hour window
+                    </small>
+                </div>
+
+                <div class="intelligence-stat">
+                    <span>Most revised fuel</span>
+
+                    <strong
+                        id="most-revised-fuel-value"
+                    >
+                        Loading...
+                    </strong>
+
+                    <small
+                        id="most-revised-fuel-detail"
+                        class="intelligence-detail"
+                    >
+                        Latest 24-hour window
+                    </small>
+                </div>
+
+            </div>
+
+            <div
+                id="revision-signals-note"
+                class="visual-explainer intelligence-explainer"
+            >
+                <strong>How to read:</strong>
+                The first two signals identify the largest single
+                upward and downward unit availability revisions
+                published during the latest 24 hours.
+                <strong>Most revised fuel</strong> identifies the fuel
+                category with the greatest total absolute MW revision
+                activity, so upward and downward movements do not cancel
+                each other out. Net revision shows the overall direction
+                after those movements are combined.
+            </div>
+
+            <article class="chart-card top-unit-revisions-card">
+
+                <div class="chart-header">
+
+                    <div>
+                        <span class="chart-eyebrow">
+                            UNIT-LEVEL INTELLIGENCE
+                        </span>
+
+                        <h3>
+                            Top Unit Revisions
+                        </h3>
+
+                        <p>
+                            Largest individual availability forecast
+                            changes published during the latest 24 hours.
+                        </p>
+                    </div>
+
+                </div>
+
+
+                <div class="unit-revisions-table-wrap">
+
+                    <table
+                        id="top-unit-revisions-table"
+                        class="unit-revisions-table"
+                    >
+
+                        <thead>
+                            <tr>
+                                <th>Unit</th>
+                                <th>Fuel type</th>
+                                <th>Direction</th>
+                                <th>Revision</th>
+                                <th>Forecast date</th>
+                                <th>Published</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="top-unit-revisions-body">
+                            <tr>
+                                <td
+                                    colspan="6"
+                                    class="table-loading"
+                                >
+                                    Loading live unit revisions...
+                                </td>
+                            </tr>
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+
+                <div
+                    id="top-unit-revisions-note"
+                    class="visual-explainer"
+                >
+                    <strong>How to read:</strong>
+                    This table ranks the largest individual unit
+                    forecast changes from the latest 24 hours.
+                    Positive MW values mean expected availability
+                    increased; negative values mean it decreased.
+                    The forecast date shows when that revised
+                    availability is expected to apply.
+                </div>
+
+            </article>
+
+
+
+        </section>
+
+
+        <!-- PLATFORM -->
+
+        <section
+            class="dashboard-section"
+            id="platform"
+        >
+
+            <div class="section-heading-row">
+
+                <div>
+                    <span class="section-overline">
+                        DATA &amp; PLATFORM
+                    </span>
+
+                    <h2>
+                        Production-style analytical architecture
+                    </h2>
+
+                    <p>
+                        Automated ingestion, governed analytical
+                        storage and live web serving.
+                    </p>
+                </div>
+
+            </div>
+
+
+            <div class="platform-grid">
+
+                <article class="platform-card">
+                    <span class="platform-icon">01</span>
+                    <strong>Elexon API</strong>
+                    <p>
+                        Source generation availability
+                        publication data.
+                    </p>
+                </article>
+
+                <article class="platform-card">
+                    <span class="platform-icon">02</span>
+                    <strong>Databricks</strong>
+                    <p>
+                        Scheduled Spark transformation
+                        and revision analytics.
+                    </p>
+                </article>
+
+                <article class="platform-card">
+                    <span class="platform-icon">03</span>
+                    <strong>Unity Catalog</strong>
+                    <p>
+                        Governed managed Delta
+                        analytical tables.
+                    </p>
+                </article>
+
+                <article class="platform-card">
+                    <span class="platform-icon">04</span>
+                    <strong>Azure App Service</strong>
+                    <p>
+                        Public live intelligence
+                        presentation layer.
+                    </p>
+                </article>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- =====================================================
+         FOOTER
+         ===================================================== -->
+
+    <footer class="dashboard-footer">
+
+        <div class="footer-inner">
+
+            <div>
+                <strong>
+                    GB Generation Availability Intelligence
+                </strong>
+
+                <span>
+                    Live analytical platform
+                </span>
+            </div>
+
+            <div class="footer-centre">
+                Elexon · Databricks · Unity Catalog · FastAPI · Azure
+            </div>
+
+            <div class="footer-credit">
+                Developed &amp; modelled by
+                <strong>Kamil Ridwan</strong>
+            </div>
+
+        </div>
+
+    </footer>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/static/dashboard.js"></script>
+
+</body>
+</html>
