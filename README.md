@@ -1,5 +1,8 @@
 # GB Generation Availability Intelligence Platform
 
+<img width="1200" height="627" alt="GB_Generation_Availability_LinkedIn_Schematic" src="https://github.com/user-attachments/assets/ca74246b-e326-4f50-9b95-b0f912b2158c" />
+
+
 > A production-style Great Britain electricity generation availability intelligence platform that preserves successive Elexon publications, tracks changes in expected generation availability, derives revision and forecast-stability intelligence, and serves live analytical outputs through Databricks, Unity Catalog, FastAPI and Microsoft Azure.
 >
 
