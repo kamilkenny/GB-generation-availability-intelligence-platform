@@ -1,6 +1,8 @@
 # GB Generation Availability Intelligence Platform
 
 > A production-style Great Britain electricity generation availability intelligence platform that preserves successive Elexon publications, tracks changes in expected generation availability, derives revision and forecast-stability intelligence, and serves live analytical outputs through Databricks, Unity Catalog, FastAPI and Microsoft Azure.
+>
+> # Developed by Kamil Ridwan 
 
 [![Release](https://img.shields.io/badge/release-v1.0.0-blue)](https://github.com/kamilkenny/GB-generation-availability-intelligence-platform/tree/v1.0.0)
 [![Python](https://img.shields.io/badge/Python-3.12-blue)](https://www.python.org/)
