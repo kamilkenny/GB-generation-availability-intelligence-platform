@@ -1,7 +1,7 @@
 import os
 
 from databricks import sql
-from databricks.sdk.core import Config
+from databricks.sdk.core import Config, oauth_service_principal
 
 
 HTTP_PATH = os.getenv(
@@ -14,15 +14,72 @@ def get_connection():
     """
     Create a Databricks SQL connection.
 
-    Local development uses the gb-energy-sql CLI profile.
-    Azure authentication will be configured separately later.
+    Azure production:
+        OAuth machine-to-machine authentication using a
+        Databricks service principal.
+
+    Local development:
+        Fall back to the existing gb-energy-sql CLI profile.
     """
+
+    server_hostname = os.getenv(
+        "DATABRICKS_SERVER_HOSTNAME"
+    )
+
+    client_id = os.getenv(
+        "DATABRICKS_CLIENT_ID"
+    )
+
+    client_secret = os.getenv(
+        "DATABRICKS_CLIENT_SECRET"
+    )
+
+    # ---------------------------------------------------------
+    # AZURE / PRODUCTION OAUTH M2M
+    # ---------------------------------------------------------
+
+    if (
+        server_hostname
+        and client_id
+        and client_secret
+    ):
+        server_hostname = (
+            server_hostname
+            .replace("https://", "")
+            .rstrip("/")
+        )
+
+        def credential_provider():
+            config = Config(
+                host=f"https://{server_hostname}",
+                client_id=client_id,
+                client_secret=client_secret,
+            )
+
+            return oauth_service_principal(
+                config
+            )
+
+        return sql.connect(
+            server_hostname=server_hostname,
+            http_path=HTTP_PATH,
+            credentials_provider=credential_provider,
+            catalog="workspace",
+            schema="gb_generation",
+        )
+
+    # ---------------------------------------------------------
+    # LOCAL DEVELOPMENT PROFILE
+    # ---------------------------------------------------------
+
     profile = os.getenv(
         "DATABRICKS_PROFILE",
         "gb-energy-sql",
     )
 
-    cfg = Config(profile=profile)
+    cfg = Config(
+        profile=profile
+    )
 
     server_hostname = (
         cfg.host

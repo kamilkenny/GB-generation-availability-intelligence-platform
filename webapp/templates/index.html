@@ -449,6 +449,7 @@
                                 Latest published system availability
                                 across the forward forecast horizon.
                             </p>
+
                         </div>
 
                         <div class="chart-status">
@@ -479,12 +480,12 @@
                         class="visual-explainer"
                     >
                         <strong>How to read:</strong>
-                        Each point shows expected available generation
-                        capacity for that forecast date from the latest
-                        publication. Higher values indicate more capacity
-                        is expected to be available; lower values indicate
-                        a tighter availability position. This is forecast
-                        availability, not actual metered generation.
+                        Each point shows the generation capacity expected to be
+                        available for that forecast date, based on the latest
+                        publication. Higher values indicate a stronger availability
+                        position, while lower values indicate tighter available
+                        capacity. Availability represents generation capacity
+                        expected to be usable as provided by the fuel mix.
                     </div>
 
 </article>
@@ -891,6 +892,227 @@
                 each other out. Net revision shows the overall direction
                 after those movements are combined.
             </div>
+
+
+            <!-- =====================================================
+                 AVAILABILITY STABILITY & EARLY WARNING
+                 ===================================================== -->
+
+            <article
+                id="stability-intelligence"
+                class="stability-intelligence-card"
+            >
+
+                <div class="stability-heading">
+
+                    <div>
+                        <span class="chart-eyebrow">
+                            AVAILABILITY STABILITY & EARLY WARNING
+                        </span>
+
+                        <h3>
+                            Forecast Stability Intelligence
+                        </h3>
+
+                        <p>
+                            Publication-to-publication revision behaviour
+                            transformed into a concise view of forecast
+                            stability and emerging availability direction.
+                        </p>
+                    </div>
+
+
+                    <div
+                        id="stability-live-status"
+                        class="stability-live-status"
+                    >
+                        <span></span>
+                        LIVE REVISION INTELLIGENCE
+                    </div>
+
+                </div>
+
+
+                <div class="stability-metric-grid">
+
+
+                    <!-- HISTORICAL STABILITY SCORE -->
+
+                    <div class="stability-metric-card">
+
+                        <span class="stability-metric-label">
+                            Historical Stability Score
+                        </span>
+
+                        <div class="stability-score-row">
+
+                            <strong
+                                id="stability-score"
+                                class="stability-score-value"
+                            >
+                                Loading...
+                            </strong>
+
+                            <span class="stability-score-denominator">
+                                / 100
+                            </span>
+
+                        </div>
+
+                        <span
+                            id="stability-band"
+                            class="stability-metric-detail"
+                        >
+                            Analysing revision behaviour...
+                        </span>
+
+
+                        <div class="stability-track">
+
+                            <div
+                                id="stability-score-fill"
+                                class="stability-track-fill"
+                                style="width: 0%;"
+                            ></div>
+
+                        </div>
+
+
+                        <span
+                            id="stability-change-share"
+                            class="stability-metric-footnote"
+                        >
+                            Loading changed revision share...
+                        </span>
+
+                    </div>
+
+
+                    <!-- 24-HOUR NET REVISION -->
+
+                    <div class="stability-metric-card">
+
+                        <span class="stability-metric-label">
+                            24h Net Revision Movement
+                        </span>
+
+                        <strong
+                            id="stability-net-revision"
+                            class="stability-main-value"
+                        >
+                            Loading...
+                        </strong>
+
+                        <span class="stability-metric-detail">
+                            Aggregate net availability revision
+                        </span>
+
+                        <span class="stability-metric-footnote">
+                            Across represented fuel categories
+                        </span>
+
+                    </div>
+
+
+                    <!-- AVAILABILITY WATCH -->
+
+                    <div class="stability-metric-card">
+
+                        <span class="stability-metric-label">
+                            Availability Watch
+                        </span>
+
+                        <strong
+                            id="stability-watch-status"
+                            class="stability-watch-value"
+                        >
+                            Loading...
+                        </strong>
+
+                        <span
+                            id="stability-watch-detail"
+                            class="stability-metric-detail"
+                        >
+                            Analysing latest revision direction...
+                        </span>
+
+                        <span class="stability-metric-footnote">
+                            Based on latest 24-hour revision activity
+                        </span>
+
+                    </div>
+
+
+                    <!-- MOST REVISED FUEL -->
+
+                    <div class="stability-metric-card">
+
+                        <span class="stability-metric-label">
+                            Most Revised Fuel
+                        </span>
+
+                        <strong
+                            id="stability-most-revised-fuel"
+                            class="stability-main-value"
+                        >
+                            Loading...
+                        </strong>
+
+                        <span
+                            id="stability-most-revised-detail"
+                            class="stability-metric-detail"
+                        >
+                            Calculating revision activity...
+                        </span>
+
+                        <span class="stability-metric-footnote">
+                            Ranked by total absolute MW revision
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <div class="stability-intelligence-note">
+
+                    <strong>
+                        Why this matters:
+                    </strong>
+
+                    The latest availability forecast alone does not
+                    reveal how stable that expectation has been.
+                    Publication-to-publication revision behaviour
+                    provides an additional indication of whether
+                    expected availability is remaining consistent
+                    or changing frequently.
+
+                </div>
+
+
+                <div class="stability-methodology-note">
+
+                    <strong>
+                        Methodology:
+                    </strong>
+
+                    The Stability Score is a custom analytical
+                    indicator derived from the historical share
+                    of unit availability revision records that
+                    remained unchanged between publications.
+
+                    The Availability Watch summarises the direction
+                    of net availability revision activity during
+                    the latest 24-hour window.
+
+                    These are analytical decision-support indicators,
+                    not official Elexon or NESO adequacy, reliability
+                    or system-margin measures.
+
+                </div>
+
+            </article>
+
 
             <article class="chart-card top-unit-revisions-card">
 

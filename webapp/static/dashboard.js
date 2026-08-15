@@ -1072,31 +1072,32 @@ async function loadFuelShare() {
         }
 
         const SHORT_LABELS = {
-            "CCGT": "Combined Cycle Gas",
+            "CCGT": "CCGT",
             "NUCLEAR": "Nuclear",
-            "OTHER": "Other Generation",
-            "BIOMASS": "Biomass",
-            "INTFR": "IFA France",
             "WIND": "Wind",
-            "INTNSL": "North Sea Link",
-            "INTVKL": "Viking Link",
-            "OCGT": "Open Cycle Gas",
-            "PS": "Pumped Storage"
+            "BIOMASS": "Biomass",
+            "OTHER": "Other",
+            "PS": "Pumped Storage",
+            "NPSHYD": "Hydro",
+            "OCGT": "OCGT",
+            "INTFR": "France",
+            "INTIFA2": "IFA2",
+            "INTELEC": "ElecLink",
+            "INTIRL": "Ireland",
+            "INTEW": "East-West",
+            "INTGRNL": "Greenlink",
+            "INTNED": "Netherlands",
+            "INTNEM": "Belgium",
+            "INTNSL": "Norway",
+            "INTVKL": "Denmark"
         };
 
         const sortedRows =
             [...rows].sort(
                 (a, b) =>
-                    b.available_mw - a.available_mw
+                    Number(b.available_mw)
+                    - Number(a.available_mw)
             );
-
-        /*
-         * The full fuel breakdown is already shown in the
-         * horizontal bar chart.
-         *
-         * The donut focuses on composition:
-         * seven largest categories + all smaller categories.
-         */
 
         const primaryRows =
             sortedRows.slice(0, 7);
@@ -1174,8 +1175,9 @@ async function loadFuelShare() {
             fuelShareChart.destroy();
         }
 
+
         /*
-         * Draw total MW in the centre of the donut.
+         * Total MW in donut centre.
          */
         const centreTextPlugin = {
             id:
@@ -1201,7 +1203,7 @@ async function loadFuelShare() {
                     (
                         chartArea.top
                         + chartArea.bottom
-                    ) / 2 - 12;
+                    ) / 2 - 8;
 
                 ctx.save();
 
@@ -1212,50 +1214,36 @@ async function loadFuelShare() {
                     "middle";
 
                 ctx.fillStyle =
-                    "#64748b";
+                    "#152238";
 
                 ctx.font =
-                    "600 11px sans-serif";
+                    "700 20px sans-serif";
 
                 ctx.fillText(
-                    "TOTAL AVAILABLE",
+                    `${formatNumber(totalMW)} MW`,
                     centreX,
-                    centreY - 24
+                    centreY
                 );
 
                 ctx.fillStyle =
-                    "#0f2742";
+                    "#718096";
 
                 ctx.font =
-                    "700 25px sans-serif";
+                    "600 10px sans-serif";
 
                 ctx.fillText(
-                    formatNumber(totalMW),
+                    "AVAILABLE CAPACITY",
                     centreX,
-                    centreY + 2
-                );
-
-                ctx.fillStyle =
-                    "#64748b";
-
-                ctx.font =
-                    "600 11px sans-serif";
-
-                ctx.fillText(
-                    "MW",
-                    centreX,
-                    centreY + 27
+                    centreY + 22
                 );
 
                 ctx.restore();
             }
         };
 
+
         /*
-         * Label the major donut sections directly.
-         *
-         * Smaller slices remain identified through the
-         * legend and tooltip to avoid visual clutter.
+         * Percentage labels drawn directly on donut slices.
          */
         const arcLabelPlugin = {
             id:
@@ -1265,13 +1253,18 @@ async function loadFuelShare() {
                 const ctx =
                     chart.ctx;
 
+                const dataset =
+                    chart.data.datasets[0];
+
                 const meta =
                     chart.getDatasetMeta(0);
 
                 meta.data.forEach(
                     (arc, index) => {
                         const value =
-                            chartRows[index].value;
+                            Number(
+                                dataset.data[index]
+                            );
 
                         const share =
                             totalMW > 0
@@ -1283,45 +1276,19 @@ async function loadFuelShare() {
                                 : 0;
 
                         /*
-                         * Every visible donut segment receives
-                         * a percentage label.
+                         * Avoid overcrowding very small slices.
                          */
+                        if (share < 3) {
+                            return;
+                        }
 
-                        const props =
-                            arc.getProps(
-                                [
-                                    "x",
-                                    "y",
-                                    "startAngle",
-                                    "endAngle",
-                                    "innerRadius",
-                                    "outerRadius"
-                                ],
-                                true
-                            );
+                        const position =
+                            arc.tooltipPosition();
 
-                        const angle =
-                            (
-                                props.startAngle
-                                + props.endAngle
-                            ) / 2;
-
-                        const radius =
-                            props.innerRadius
-                            + (
-                                props.outerRadius
-                                - props.innerRadius
-                            ) * 0.57;
-
-                        const x =
-                            props.x
-                            + Math.cos(angle)
-                            * radius;
-
-                        const y =
-                            props.y
-                            + Math.sin(angle)
-                            * radius;
+                        const fontSize =
+                            share >= 10
+                                ? 12
+                                : 10;
 
                         ctx.save();
 
@@ -1331,40 +1298,16 @@ async function loadFuelShare() {
                         ctx.textBaseline =
                             "middle";
 
-                        /*
-                         * Keep direct labels intentionally minimal.
-                         * Category names already appear in the legend.
-                         */
                         ctx.fillStyle =
                             "#ffffff";
-
-                        /*
-                         * Orange and green slices benefit from
-                         * darker text for contrast.
-                         */
-                        if (index === 1 || index === 2) {
-                            ctx.fillStyle =
-                                "#17324d";
-                        }
-
-                        /*
-                         * Use slightly smaller typography for
-                         * narrow sections so all percentages fit.
-                         */
-                        const fontSize =
-                            share >= 8
-                                ? 12
-                                : share >= 5
-                                    ? 10
-                                    : 9;
 
                         ctx.font =
                             `700 ${fontSize}px sans-serif`;
 
                         ctx.fillText(
                             `${share.toFixed(1)}%`,
-                            x,
-                            y
+                            position.x,
+                            position.y
                         );
 
                         ctx.restore();
@@ -1372,6 +1315,7 @@ async function loadFuelShare() {
                 );
             }
         };
+
 
         fuelShareChart =
             new Chart(
@@ -1429,31 +1373,7 @@ async function loadFuelShare() {
                             false,
 
                         cutout:
-                            "58%",
-
-                        radius:
-                            "84%",
-
-                        layout: {
-                            padding: {
-                                top:
-                                    4,
-
-                                right:
-                                    16,
-
-                                bottom:
-                                    4,
-
-                                left:
-                                    16
-                            }
-                        },
-
-                        animation: {
-                            duration:
-                                650
-                        },
+                            "64%",
 
                         plugins: {
                             legend: {
@@ -1468,13 +1388,13 @@ async function loadFuelShare() {
                                         "circle",
 
                                     boxWidth:
-                                        9,
+                                        8,
 
                                     boxHeight:
-                                        9,
+                                        8,
 
                                     padding:
-                                        14,
+                                        12,
 
                                     color:
                                         "#52647b",
@@ -1484,65 +1404,19 @@ async function loadFuelShare() {
                                             10,
                                         weight:
                                             "600"
-                                    },
-
-                                    generateLabels:
-                                        function() {
-                                            return chartRows.map(
-                                                (
-                                                    row,
-                                                    index
-                                                ) => {
-                                                    const share =
-                                                        totalMW > 0
-                                                            ? (
-                                                                row.value
-                                                                / totalMW
-                                                                * 100
-                                                            )
-                                                            : 0;
-
-                                                    return {
-                                                        text:
-                                                            row.shortLabel,
-
-                                                        fillStyle:
-                                                            colours[index],
-
-                                                        strokeStyle:
-                                                            colours[index],
-
-                                                        lineWidth:
-                                                            0,
-
-                                                        pointStyle:
-                                                            "circle",
-
-                                                        hidden:
-                                                            false,
-
-                                                        index:
-                                                            index
-                                                    };
-                                                }
-                                            );
-                                        }
+                                    }
                                 }
                             },
 
                             tooltip: {
-                                displayColors:
-                                    true,
-
                                 padding:
-                                    13,
+                                    12,
 
                                 callbacks: {
                                     title:
                                         function(items) {
                                             const index =
-                                                items[0]
-                                                    .dataIndex;
+                                                items[0].dataIndex;
 
                                             return (
                                                 chartRows[index]
@@ -1567,8 +1441,8 @@ async function loadFuelShare() {
                                                     : 0;
 
                                             return (
-                                                `${formatNumber(value)} MW`
-                                                + ` · ${share.toFixed(1)}%`
+                                                `${formatNumber(value)} MW `
+                                                + `(${share.toFixed(1)}%)`
                                             );
                                         }
                                 }
@@ -1585,8 +1459,7 @@ async function loadFuelShare() {
         );
 
         if (message) {
-            message.hidden =
-                false;
+            message.hidden = false;
 
             message.classList.remove(
                 "hidden"
@@ -1601,19 +1474,15 @@ async function loadFuelShare() {
 
 
 /* =========================================================
-   24H FUEL REVISION IMPACT
+   REVISION INTELLIGENCE
    ========================================================= */
 
 async function loadFuelRevisions() {
     const canvas =
-        document.getElementById(
-            "fuel-revision-chart"
-        );
+        document.getElementById("fuel-revision-chart");
 
     const message =
-        document.getElementById(
-            "fuel-revision-message"
-        );
+        document.getElementById("fuel-revision-message");
 
     if (!canvas) {
         return;
@@ -1623,9 +1492,7 @@ async function loadFuelRevisions() {
         const response =
             await fetch(
                 "/api/fuel-revisions",
-                {
-                    cache: "no-store"
-                }
+                { cache: "no-store" }
             );
 
         if (!response.ok) {
@@ -1639,14 +1506,10 @@ async function loadFuelRevisions() {
 
         if (!Array.isArray(rows) || rows.length === 0) {
             throw new Error(
-                "No revision data returned"
+                "No fuel revision data returned"
             );
         }
 
-        /*
-         * Sort by absolute impact so the most operationally
-         * significant revision appears first.
-         */
         const sortedRows =
             [...rows].sort(
                 (a, b) =>
@@ -1667,22 +1530,13 @@ async function loadFuelRevisions() {
                     Number(row.net_revision_mw)
             );
 
-        /*
-         * Symmetrical axis around zero.
-         * This prevents upward revisions from visually
-         * overpowering downward revisions through scaling.
-         */
-        const largestMagnitude =
-            Math.max(
-                ...values.map(
-                    value => Math.abs(value)
-                )
+        const colours =
+            values.map(
+                value =>
+                    value >= 0
+                        ? "#16a765"
+                        : "#ef5350"
             );
-
-        const axisLimit =
-            Math.ceil(
-                largestMagnitude / 1000
-            ) * 1000;
 
         if (message) {
             message.classList.add("hidden");
@@ -1697,12 +1551,10 @@ async function loadFuelRevisions() {
             new Chart(
                 canvas.getContext("2d"),
                 {
-                    type:
-                        "bar",
+                    type: "bar",
 
                     data: {
-                        labels:
-                            labels,
+                        labels: labels,
 
                         datasets: [
                             {
@@ -1713,32 +1565,13 @@ async function loadFuelRevisions() {
                                     values,
 
                                 backgroundColor:
-                                    values.map(
-                                        value =>
-                                            value >= 0
-                                                ? "rgba(22, 167, 101, 0.82)"
-                                                : "rgba(239, 83, 80, 0.82)"
-                                    ),
-
-                                borderColor:
-                                    values.map(
-                                        value =>
-                                            value >= 0
-                                                ? "#16a765"
-                                                : "#ef5350"
-                                    ),
-
-                                borderWidth:
-                                    1,
+                                    colours,
 
                                 borderRadius:
                                     5,
 
-                                barPercentage:
-                                    0.68,
-
-                                categoryPercentage:
-                                    0.82
+                                borderWidth:
+                                    0
                             }
                         ]
                     },
@@ -1753,14 +1586,6 @@ async function loadFuelRevisions() {
                         indexAxis:
                             "y",
 
-                        interaction: {
-                            intersect:
-                                false,
-
-                            mode:
-                                "nearest"
-                        },
-
                         plugins: {
                             legend: {
                                 display:
@@ -1771,9 +1596,6 @@ async function loadFuelRevisions() {
                                 displayColors:
                                     false,
 
-                                padding:
-                                    12,
-
                                 callbacks: {
                                     label:
                                         function(context) {
@@ -1782,19 +1604,13 @@ async function loadFuelRevisions() {
                                                     context.raw
                                                 );
 
-                                            const direction =
-                                                value >= 0
-                                                    ? "Upward revision"
-                                                    : "Downward revision";
-
-                                            const sign =
+                                            const prefix =
                                                 value > 0
                                                     ? "+"
                                                     : "";
 
                                             return (
-                                                `${direction}: `
-                                                + `${sign}${formatNumber(value)} MW`
+                                                `${prefix}${formatNumber(value)} MW`
                                             );
                                         }
                                 }
@@ -1827,12 +1643,6 @@ async function loadFuelRevisions() {
                             },
 
                             x: {
-                                min:
-                                    -axisLimit,
-
-                                max:
-                                    axisLimit,
-
                                 border: {
                                     display:
                                         false
@@ -1840,22 +1650,7 @@ async function loadFuelRevisions() {
 
                                 grid: {
                                     color:
-                                        function(context) {
-                                            return (
-                                                context.tick.value === 0
-                                                    ? "rgba(15, 39, 66, 0.55)"
-                                                    : "rgba(148, 163, 184, 0.14)"
-                                            );
-                                        },
-
-                                    lineWidth:
-                                        function(context) {
-                                            return (
-                                                context.tick.value === 0
-                                                    ? 2
-                                                    : 1
-                                            );
-                                        }
+                                        "rgba(148, 163, 184, 0.14)"
                                 },
 
                                 ticks: {
@@ -1864,20 +1659,16 @@ async function loadFuelRevisions() {
 
                                     callback:
                                         function(value) {
-                                            if (value === 0) {
-                                                return "0";
+                                            if (
+                                                Math.abs(value)
+                                                >= 1000
+                                            ) {
+                                                return (
+                                                    `${value / 1000}k`
+                                                );
                                             }
 
-                                            const sign =
-                                                value > 0
-                                                    ? "+"
-                                                    : "−";
-
-                                            return (
-                                                sign
-                                                + Math.abs(value / 1000)
-                                                + "k"
-                                            );
+                                            return value;
                                         }
                                 },
 
@@ -1886,17 +1677,10 @@ async function loadFuelRevisions() {
                                         true,
 
                                     text:
-                                        "Net revision impact (MW)",
+                                        "Net revision MW",
 
                                     color:
-                                        "#69788d",
-
-                                    font: {
-                                        size:
-                                            11,
-                                        weight:
-                                            "600"
-                                    }
+                                        "#69788d"
                                 }
                             }
                         }
@@ -1906,23 +1690,18 @@ async function loadFuelRevisions() {
     }
     catch (error) {
         console.error(
-            "Fuel revision chart failed:",
+            "Fuel revisions failed:",
             error
         );
 
         if (message) {
             message.hidden = false;
-
-            message.classList.remove(
-                "hidden"
-            );
-
+            message.classList.remove("hidden");
             message.textContent =
                 "Unable to load revision intelligence";
         }
     }
 }
-
 
 
 /* =========================================================
@@ -1948,9 +1727,7 @@ async function loadRevisionDirections() {
         const response =
             await fetch(
                 "/api/revision-directions",
-                {
-                    cache: "no-store"
-                }
+                { cache: "no-store" }
             );
 
         if (!response.ok) {
@@ -1969,9 +1746,9 @@ async function loadRevisionDirections() {
         }
 
         const order = {
-            up: 0,
-            down: 1,
-            unchanged: 2
+            up: 1,
+            down: 2,
+            unchanged: 3
         };
 
         const labelsMap = {
@@ -1983,7 +1760,7 @@ async function loadRevisionDirections() {
         const colourMap = {
             up: "#16a765",
             down: "#ef5350",
-            unchanged: "#64748b"
+            unchanged: "#94a3b8"
         };
 
         const sortedRows =
@@ -2022,10 +1799,6 @@ async function loadRevisionDirections() {
             revisionDirectionChart.destroy();
         }
 
-
-        /*
-         * Direct count + percentage labels.
-         */
         const directionLabelsPlugin = {
             id:
                 "revisionDirectionLabels",
@@ -2048,57 +1821,29 @@ async function loadRevisionDirections() {
 
                         ctx.save();
 
+                        ctx.fillStyle =
+                            "#52647b";
+
                         ctx.font =
-                            "700 10px sans-serif";
+                            "600 10px sans-serif";
+
+                        ctx.textAlign =
+                            "left";
 
                         ctx.textBaseline =
                             "middle";
 
-                        const textWidth =
-                            ctx.measureText(label).width;
-
-                        const barWidth =
-                            Math.abs(
-                                bar.x - bar.base
-                            );
-
-                        if (
-                            barWidth
-                            >
-                            textWidth + 24
-                        ) {
-                            ctx.fillStyle =
-                                "#ffffff";
-
-                            ctx.textAlign =
-                                "right";
-
-                            ctx.fillText(
-                                label,
-                                bar.x - 8,
-                                bar.y
-                            );
-                        }
-                        else {
-                            ctx.fillStyle =
-                                "#334155";
-
-                            ctx.textAlign =
-                                "left";
-
-                            ctx.fillText(
-                                label,
-                                bar.x + 8,
-                                bar.y
-                            );
-                        }
+                        ctx.fillText(
+                            label,
+                            bar.x + 8,
+                            bar.y
+                        );
 
                         ctx.restore();
                     }
                 );
             }
         };
-
 
         revisionDirectionChart =
             new Chart(
@@ -2118,7 +1863,7 @@ async function loadRevisionDirections() {
                         datasets: [
                             {
                                 label:
-                                    "Revision records",
+                                    "Revision count",
 
                                 data:
                                     values,
@@ -2126,20 +1871,8 @@ async function loadRevisionDirections() {
                                 backgroundColor:
                                     colours,
 
-                                borderColor:
-                                    colours,
-
-                                borderWidth:
-                                    1,
-
                                 borderRadius:
-                                    6,
-
-                                barPercentage:
-                                    0.58,
-
-                                categoryPercentage:
-                                    0.76
+                                    5
                             }
                         ]
                     },
@@ -2154,6 +1887,13 @@ async function loadRevisionDirections() {
                         indexAxis:
                             "y",
 
+                        layout: {
+                            padding: {
+                                right:
+                                    105
+                            }
+                        },
+
                         plugins: {
                             legend: {
                                 display:
@@ -2164,9 +1904,6 @@ async function loadRevisionDirections() {
                                 displayColors:
                                     false,
 
-                                padding:
-                                    12,
-
                                 callbacks: {
                                     label:
                                         function(context) {
@@ -2176,8 +1913,8 @@ async function loadRevisionDirections() {
                                                 ];
 
                                             return (
-                                                `${formatNumber(row.count)} records`
-                                                + ` · ${Number(row.share_pct).toFixed(2)}%`
+                                                `${formatNumber(row.count)} revisions `
+                                                + `(${Number(row.share_pct).toFixed(2)}%)`
                                             );
                                         }
                                 }
@@ -2202,10 +1939,9 @@ async function loadRevisionDirections() {
 
                                     font: {
                                         size:
-                                            11,
-
+                                            10,
                                         weight:
-                                            "700"
+                                            "600"
                                     }
                                 }
                             },
@@ -2213,9 +1949,6 @@ async function loadRevisionDirections() {
                             x: {
                                 beginAtZero:
                                     true,
-
-                                suggestedMax:
-                                    380000,
 
                                 border: {
                                     display:
@@ -2235,34 +1968,14 @@ async function loadRevisionDirections() {
                                         function(value) {
                                             if (value >= 1000) {
                                                 return (
-                                                    Math.round(
+                                                    `${Math.round(
                                                         value / 1000
-                                                    )
-                                                    + "k"
+                                                    )}k`
                                                 );
                                             }
 
                                             return value;
                                         }
-                                },
-
-                                title: {
-                                    display:
-                                        true,
-
-                                    text:
-                                        "Historical revision records",
-
-                                    color:
-                                        "#69788d",
-
-                                    font: {
-                                        size:
-                                            11,
-
-                                        weight:
-                                            "600"
-                                    }
                                 }
                             }
                         }
@@ -2272,18 +1985,13 @@ async function loadRevisionDirections() {
     }
     catch (error) {
         console.error(
-            "Revision direction chart failed:",
+            "Revision directions failed:",
             error
         );
 
         if (message) {
-            message.hidden =
-                false;
-
-            message.classList.remove(
-                "hidden"
-            );
-
+            message.hidden = false;
+            message.classList.remove("hidden");
             message.textContent =
                 "Unable to load revision direction history";
         }
@@ -2291,9 +1999,8 @@ async function loadRevisionDirections() {
 }
 
 
-
 /* =========================================================
-   LATEST MARKET INTELLIGENCE
+   REVISION SIGNALS
    ========================================================= */
 
 async function loadRevisionSignals() {
@@ -2301,9 +2008,7 @@ async function loadRevisionSignals() {
         const response =
             await fetch(
                 "/api/revision-signals",
-                {
-                    cache: "no-store"
-                }
+                { cache: "no-store" }
             );
 
         if (!response.ok) {
@@ -2325,108 +2030,62 @@ async function loadRevisionSignals() {
             data.most_revised_fuel;
 
 
-        /* -------------------------------------------------
-           Largest upward revision
-           ------------------------------------------------- */
-
-        const upwardValue =
-            document.getElementById(
-                "largest-upward-value"
+        if (upward) {
+            setText(
+                "largest-upward-value",
+                `+${formatNumber(
+                    upward.revision_mw
+                )} MW`
             );
 
-        const upwardDetail =
-            document.getElementById(
-                "largest-upward-detail"
-            );
-
-        if (upward && upwardValue) {
-            upwardValue.textContent =
-                `+${formatNumber(upward.revision_mw)} MW`;
-        }
-
-        if (upward && upwardDetail) {
-            upwardDetail.textContent =
+            setText(
+                "largest-upward-detail",
                 `${upward.unit} · `
-                + `${upward.fuel_label} · `
-                + `Forecast ${formatForecastDate(
-                    upward.forecast_date
-                )}`;
+                + `${upward.fuel_label || upward.fuel_type}`
+            );
         }
 
 
-        /* -------------------------------------------------
-           Largest downward revision
-           ------------------------------------------------- */
-
-        const downwardValue =
-            document.getElementById(
-                "largest-downward-value"
+        if (downward) {
+            setText(
+                "largest-downward-value",
+                `${formatNumber(
+                    downward.revision_mw
+                )} MW`
             );
 
-        const downwardDetail =
-            document.getElementById(
-                "largest-downward-detail"
-            );
-
-        if (downward && downwardValue) {
-            downwardValue.textContent =
-                `−${formatNumber(
-                    Math.abs(downward.revision_mw)
-                )} MW`;
-        }
-
-        if (downward && downwardDetail) {
-            downwardDetail.textContent =
+            setText(
+                "largest-downward-detail",
                 `${downward.unit} · `
-                + `${downward.fuel_label} · `
-                + `Forecast ${formatForecastDate(
-                    downward.forecast_date
-                )}`;
+                + `${downward.fuel_label || downward.fuel_type}`
+            );
         }
 
 
-        /* -------------------------------------------------
-           Most revised fuel
-           ------------------------------------------------- */
-
-        const fuelValue =
-            document.getElementById(
-                "most-revised-fuel-value"
+        if (fuel) {
+            setText(
+                "most-revised-fuel-value",
+                fuel.fuel_label
+                || fuel.fuel_type
             );
 
-        const fuelDetail =
-            document.getElementById(
-                "most-revised-fuel-detail"
-            );
-
-        if (fuel && fuelValue) {
-            fuelValue.textContent =
-                fuel.fuel_label;
-        }
-
-        if (fuel && fuelDetail) {
             const net =
                 Number(
                     fuel.net_revision_mw
                 );
 
-            const netSign =
+            const prefix =
                 net > 0
                     ? "+"
-                    : net < 0
-                        ? "−"
-                        : "";
+                    : "";
 
-            fuelDetail.textContent =
+            setText(
+                "most-revised-fuel-detail",
                 `${formatNumber(
                     fuel.absolute_revision_mw
-                )} MW total activity · `
-                + `${netSign}${formatNumber(
-                    Math.abs(net)
-                )} MW net · `
-                + `${formatNumber(
-                    fuel.revision_records
-                )} records`;
+                )} MW absolute · `
+                + `${prefix}${formatNumber(net)} MW net`
+            );
         }
     }
     catch (error) {
@@ -2435,26 +2094,22 @@ async function loadRevisionSignals() {
             error
         );
 
-        const ids = [
+        setText(
             "largest-upward-value",
+            "Unavailable"
+        );
+
+        setText(
             "largest-downward-value",
-            "most-revised-fuel-value"
-        ];
+            "Unavailable"
+        );
 
-        ids.forEach(
-            id => {
-                const element =
-                    document.getElementById(id);
-
-                if (element) {
-                    element.textContent =
-                        "Unavailable";
-                }
-            }
+        setText(
+            "most-revised-fuel-value",
+            "Unavailable"
         );
     }
 }
-
 
 
 /* =========================================================
@@ -2475,9 +2130,7 @@ async function loadTopUnitRevisions() {
         const response =
             await fetch(
                 "/api/top-unit-revisions",
-                {
-                    cache: "no-store"
-                }
+                { cache: "no-store" }
             );
 
         if (!response.ok) {
@@ -2490,92 +2143,84 @@ async function loadTopUnitRevisions() {
             await response.json();
 
         if (!Array.isArray(rows) || rows.length === 0) {
-            body.innerHTML = `
-                <tr>
-                    <td
-                        colspan="6"
-                        class="table-loading"
-                    >
-                        No unit revisions found in the latest 24 hours.
-                    </td>
-                </tr>
-            `;
-
-            return;
+            throw new Error(
+                "No unit revision data returned"
+            );
         }
 
-        body.innerHTML =
-            rows.map(
-                row => {
-                    const revision =
-                        Number(
-                            row.revision_mw
-                        );
+        body.innerHTML = "";
 
-                    const isUp =
-                        revision > 0;
+        rows.forEach(
+            row => {
+                const tr =
+                    document.createElement("tr");
 
-                    const direction =
-                        isUp
-                            ? "Upward"
-                            : "Downward";
+                const revision =
+                    Number(
+                        row.revision_mw
+                    );
 
-                    const directionClass =
-                        isUp
-                            ? "up"
-                            : "down";
+                const revisionPrefix =
+                    revision > 0
+                        ? "+"
+                        : "";
 
-                    const sign =
-                        isUp
-                            ? "+"
-                            : "−";
+                const directionLabel =
+                    row.direction === "up"
+                        ? "Upward"
+                        : row.direction === "down"
+                            ? "Downward"
+                            : "Unchanged";
 
-                    return `
-                        <tr>
-                            <td>
-                                <span class="unit-name">
-                                    ${row.unit}
-                                </span>
-                            </td>
+                tr.innerHTML = `
+                    <td>
+                        <strong>${row.unit}</strong>
+                    </td>
 
-                            <td>
-                                ${row.fuel_label}
-                            </td>
+                    <td>
+                        ${row.fuel_label || row.fuel_type}
+                    </td>
 
-                            <td>
-                                <span
-                                    class="direction-badge ${directionClass}"
-                                >
-                                    ${direction}
-                                </span>
-                            </td>
+                    <td>
+                        <span class="${
+                            row.direction === "up"
+                                ? "revision-up"
+                                : row.direction === "down"
+                                    ? "revision-down"
+                                    : "revision-unchanged"
+                        }">
+                            ${directionLabel}
+                        </span>
+                    </td>
 
-                            <td>
-                                <span
-                                    class="revision-value ${directionClass}"
-                                >
-                                    ${sign}${formatNumber(
-                                        Math.abs(revision)
-                                    )} MW
-                                </span>
-                            </td>
+                    <td>
+                        <strong class="${
+                            revision > 0
+                                ? "revision-up"
+                                : revision < 0
+                                    ? "revision-down"
+                                    : "revision-unchanged"
+                        }">
+                            ${revisionPrefix}${formatNumber(revision)} MW
+                        </strong>
+                    </td>
 
-                            <td>
-                                ${formatForecastDate(
-                                    row.forecast_date
-                                )}
-                            </td>
+                    <td>
+                        ${formatForecastDate(
+                            row.forecast_date
+                        )}
+                    </td>
 
-                            <td>
-                                ${formatPublication(
-                                    row.publication_time
-                                )}
-                            </td>
-                        </tr>
-                    `;
-                }
-            )
-            .join("");
+                    <td>
+                        ${formatPublication(
+                            row.publication_time
+                        )}
+                    </td>
+                `;
+
+                body.appendChild(tr);
+            }
+        );
     }
     catch (error) {
         console.error(
@@ -2585,14 +2230,228 @@ async function loadTopUnitRevisions() {
 
         body.innerHTML = `
             <tr>
-                <td
-                    colspan="6"
-                    class="table-loading"
-                >
-                    Unable to load unit revision intelligence.
+                <td colspan="6">
+                    Unable to load unit revision intelligence
                 </td>
             </tr>
         `;
+    }
+}
+
+
+
+/* =========================================================
+   AVAILABILITY STABILITY & EARLY WARNING
+   ========================================================= */
+
+async function loadStabilityIntelligence() {
+
+    try {
+        const response =
+            await fetch(
+                "/api/stability-intelligence",
+                {
+                    cache:
+                        "no-store"
+                }
+            );
+
+        if (!response.ok) {
+            throw new Error(
+                `API returned ${response.status}`
+            );
+        }
+
+        const data =
+            await response.json();
+
+
+        const score =
+            Number(
+                data.stability_score
+                || 0
+            );
+
+
+        setText(
+            "stability-score",
+            score.toFixed(1)
+        );
+
+
+        setText(
+            "stability-band",
+            data.stability_band
+            || "Unavailable"
+        );
+
+
+        setText(
+            "stability-change-share",
+            `${Number(
+                data.changed_revision_share_pct
+                || 0
+            ).toFixed(2)}% of historical revision records changed MW`
+        );
+
+
+        const scoreFill =
+            document.getElementById(
+                "stability-score-fill"
+            );
+
+        if (scoreFill) {
+            scoreFill.style.width =
+                `${Math.max(
+                    0,
+                    Math.min(
+                        100,
+                        score
+                    )
+                )}%`;
+        }
+
+
+        const netRevision =
+            Number(
+                data.net_revision_mw_24h
+                || 0
+            );
+
+
+        const netRevisionElement =
+            document.getElementById(
+                "stability-net-revision"
+            );
+
+
+        if (netRevisionElement) {
+
+            const prefix =
+                netRevision > 0
+                    ? "+"
+                    : "";
+
+            netRevisionElement.textContent =
+                `${prefix}${formatNumber(
+                    netRevision
+                )} MW`;
+
+
+            netRevisionElement.classList.remove(
+                "positive",
+                "negative",
+                "neutral"
+            );
+
+
+            if (netRevision > 0) {
+                netRevisionElement.classList.add(
+                    "positive"
+                );
+            }
+
+            else if (netRevision < 0) {
+                netRevisionElement.classList.add(
+                    "negative"
+                );
+            }
+
+            else {
+                netRevisionElement.classList.add(
+                    "neutral"
+                );
+            }
+        }
+
+
+        const watchElement =
+            document.getElementById(
+                "stability-watch-status"
+            );
+
+
+        if (watchElement) {
+
+            watchElement.textContent =
+                data.watch_status
+                || "Unavailable";
+
+
+            watchElement.classList.remove(
+                "positive",
+                "negative",
+                "neutral"
+            );
+
+
+            watchElement.classList.add(
+                data.watch_tone
+                || "neutral"
+            );
+        }
+
+
+        setText(
+            "stability-watch-detail",
+            data.watch_detail
+            || "Revision watch unavailable"
+        );
+
+
+        setText(
+            "stability-most-revised-fuel",
+            data.most_revised_fuel
+            || "Unavailable"
+        );
+
+
+        setText(
+            "stability-most-revised-detail",
+            `${formatNumber(
+                data.most_revised_fuel_abs_mw
+                || 0
+            )} MW absolute revision activity`
+        );
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Stability intelligence failed:",
+            error
+        );
+
+
+        setText(
+            "stability-score",
+            "Unavailable"
+        );
+
+
+        setText(
+            "stability-band",
+            "Unable to calculate stability"
+        );
+
+
+        setText(
+            "stability-net-revision",
+            "Unavailable"
+        );
+
+
+        setText(
+            "stability-watch-status",
+            "Unavailable"
+        );
+
+
+        setText(
+            "stability-most-revised-fuel",
+            "Unavailable"
+        );
     }
 }
 
@@ -2641,7 +2500,8 @@ async function refreshDashboard() {
         loadFuelRevisions(),
         loadRevisionDirections(),
         loadRevisionSignals(),
-        loadTopUnitRevisions()
+        loadTopUnitRevisions(),
+        loadStabilityIntelligence()
     ]);
 }
 

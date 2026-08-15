@@ -114,6 +114,190 @@ def api_revision_signals():
         ) from exc
 
 
+
+@app.get("/api/stability-intelligence")
+def api_stability_intelligence():
+    """
+    Build a stakeholder-facing availability stability indicator
+    from the revision intelligence already produced by the
+    Databricks analytical layer.
+
+    This is a custom analytical indicator. It is not an official
+    Elexon or NESO adequacy, margin or reliability metric.
+    """
+
+    try:
+        directions = fetch_revision_direction_counts()
+        fuel_revisions = fetch_fuel_revisions_24h()
+        signals = fetch_revision_signals_24h()
+
+        if not directions:
+            raise ValueError(
+                "Revision direction history is unavailable"
+            )
+
+        direction_lookup = {
+            str(row["direction"]).lower(): row
+            for row in directions
+        }
+
+        unchanged_row = direction_lookup.get(
+            "unchanged",
+            {}
+        )
+
+        stability_score = float(
+            unchanged_row.get(
+                "share_pct",
+                0.0
+            )
+        )
+
+        changed_share = max(
+            0.0,
+            100.0 - stability_score
+        )
+
+        if stability_score >= 95:
+            stability_band = "Highly stable"
+
+        elif stability_score >= 90:
+            stability_band = "Stable"
+
+        elif stability_score >= 80:
+            stability_band = "Moderately stable"
+
+        else:
+            stability_band = "High revision activity"
+
+
+        net_revision_mw = sum(
+            float(
+                row.get(
+                    "net_revision_mw",
+                    0.0
+                )
+                or 0.0
+            )
+            for row in fuel_revisions
+        )
+
+
+        if net_revision_mw > 0:
+            watch_status = "UPWARD BIAS"
+
+            watch_tone = "positive"
+
+            watch_detail = (
+                "Latest 24-hour revision activity is "
+                "net positive across the represented "
+                "fuel categories."
+            )
+
+        elif net_revision_mw < 0:
+            watch_status = "DOWNWARD WATCH"
+
+            watch_tone = "negative"
+
+            watch_detail = (
+                "Latest 24-hour revision activity is "
+                "net negative across the represented "
+                "fuel categories."
+            )
+
+        else:
+            watch_status = "BALANCED"
+
+            watch_tone = "neutral"
+
+            watch_detail = (
+                "Latest 24-hour upward and downward "
+                "revision movements are broadly balanced."
+            )
+
+
+        most_revised_fuel = (
+            signals.get(
+                "most_revised_fuel",
+                {}
+            )
+            if signals
+            else {}
+        )
+
+
+        return {
+            "stability_score": round(
+                stability_score,
+                2
+            ),
+
+            "stability_band":
+                stability_band,
+
+            "changed_revision_share_pct": round(
+                changed_share,
+                2
+            ),
+
+            "net_revision_mw_24h": round(
+                net_revision_mw,
+                1
+            ),
+
+            "watch_status":
+                watch_status,
+
+            "watch_tone":
+                watch_tone,
+
+            "watch_detail":
+                watch_detail,
+
+            "most_revised_fuel": (
+                most_revised_fuel.get(
+                    "fuel_label"
+                )
+                or most_revised_fuel.get(
+                    "fuel_type"
+                )
+                or "Unavailable"
+            ),
+
+            "most_revised_fuel_abs_mw": float(
+                most_revised_fuel.get(
+                    "absolute_revision_mw",
+                    0.0
+                )
+                or 0.0
+            ),
+
+            "latest_publication": (
+                signals.get(
+                    "latest_publication"
+                )
+                if signals
+                else None
+            ),
+
+            "methodology": (
+                "Custom analytical stability indicator "
+                "derived from publication-to-publication "
+                "revision behaviour. It is not an official "
+                "Elexon or NESO adequacy metric."
+            ),
+        }
+
+    except Exception as exc:
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "Unable to calculate availability "
+                "stability intelligence"
+            ),
+        ) from exc
+
+
 @app.get("/api/top-unit-revisions")
 def api_top_unit_revisions():
     try:
