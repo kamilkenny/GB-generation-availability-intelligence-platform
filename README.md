@@ -24,6 +24,8 @@ https://gb-generation-intelligence-kamil.azurewebsites.net/
 
 The public application is hosted on **Microsoft Azure App Service** and retrieves governed analytical data from a **Databricks SQL Warehouse** using a dedicated Databricks service principal and OAuth machine-to-machine authentication.
 
+
+Read more about the Project in the Medium Post: https://medium.com/@kamilkenny22/beyond-the-latest-forecast-building-a-live-gb-generation-availability-intelligence-platform-46eaf295f0f3?postPublishedType=repub
 ---
 > # Developed by Kamil Ridwan
 >
