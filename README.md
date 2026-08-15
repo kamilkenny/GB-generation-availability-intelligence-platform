@@ -1,4 +1,4 @@
-# GB electricity Generation Availability Intelligence Platform
+# GB Electricity Generation Availability Intelligence Platform
 
 <img width="1200" height="627" alt="GB_Generation_Availability_LinkedIn_Schematic" src="https://github.com/user-attachments/assets/ca74246b-e326-4f50-9b95-b0f912b2158c" />
 
