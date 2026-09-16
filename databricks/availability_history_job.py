@@ -7,10 +7,39 @@ from pathlib import Path
 from pyspark.sql import SparkSession
 
 
-PROJECT_ROOT = Path(
-    globals().get("__file__")
-    or sys.argv[0]
-).resolve().parents[1]
+def _resolve_project_root() -> Path:
+    """
+    Resolve the project root safely.
+
+    Normal Python scripts provide __file__, but Databricks
+    may execute Python files using exec(), where __file__
+    is not defined.
+    """
+
+    file_value = globals().get("__file__")
+
+    if file_value:
+        return Path(file_value).resolve().parents[1]
+
+    if sys.argv and sys.argv[0]:
+        candidate = Path(sys.argv[0]).resolve()
+
+        if candidate.name == "availability_history_job.py":
+            return candidate.parents[1]
+
+    current_directory = Path.cwd().resolve()
+
+    for candidate in (
+        current_directory,
+        *current_directory.parents,
+    ):
+        if (candidate / "src").is_dir():
+            return candidate
+
+    return current_directory
+
+
+PROJECT_ROOT = _resolve_project_root()
 
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(
@@ -140,7 +169,9 @@ def execute_live_job(
     catalog: str,
     schema: str,
 ) -> dict:
-    """Collect the latest publication then refresh analytics."""
+    """
+    Collect the latest publication then refresh analytics.
+    """
 
     raw_path = Path(raw_directory)
 
