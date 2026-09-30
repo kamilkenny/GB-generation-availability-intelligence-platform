@@ -1,5 +1,8 @@
 # GB Electricity Generation Availability Intelligence Platform
 
+<img width="1856" height="767" alt="neso availability" src="https://github.com/user-attachments/assets/dde6639b-07e6-4a40-b208-2580cc2205d2" />
+
+
 <img width="1200" height="627" alt="GB_Generation_Availability_LinkedIn_Schematic" src="https://github.com/user-attachments/assets/ca74246b-e326-4f50-9b95-b0f912b2158c" />
 
 
